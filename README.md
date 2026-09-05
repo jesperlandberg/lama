@@ -25,3 +25,13 @@ npm run build     # every package's dist/
 
 Each package builds with `tsc` to its own `dist/` (declarations included) and
 packs itself on `npm pack` / release.
+
+## Release
+
+```sh
+npm run release -- split            # patch bump, or: minor | major | 1.2.3
+```
+
+Bumps the package, builds, packs, commits `release(split): x.y.z`, tags
+`split-vx.y.z`, pushes, and creates the GitHub release with the tarball. Then
+point the consuming project at the new URL the script prints.

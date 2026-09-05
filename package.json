@@ -4,10 +4,13 @@
   "description": "Jesper Landberg's front-end packages — one repo, independent packages under @lama.",
   "license": "MIT",
   "type": "module",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "npm run build --workspaces",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "release": "node scripts/release.mjs"
   },
   "devDependencies": {
     "typescript": "^5"
