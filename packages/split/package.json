@@ -1,6 +1,6 @@
 {
   "name": "@lama/split",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Splits blocks of text into the lines the browser painted — every block measured before any is cut, every original node put back on revert.",
   "keywords": [
     "text",
