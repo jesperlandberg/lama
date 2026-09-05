@@ -43,7 +43,7 @@ run(`npm pack --pack-destination ${process.cwd()}/.release`, dir)
 
 run(`git add ${dir}/package.json package-lock.json`)
 run(`git commit -q -m "release(${name}): ${version}"`)
-run(`git tag ${tag}`)
+run(`git tag -a ${tag} -m "${pkg.name} ${version}"`)
 run('git push -q --follow-tags')
 run(`gh release create ${tag} .release/${file} --title "${pkg.name} ${version}" --notes-file -`, '.', `Install straight from this release:\n\n"${pkg.name}": "${url}"\n`)
 
