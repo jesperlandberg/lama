@@ -6,6 +6,7 @@ repo, independent packages, each published on its own under `@lama`.
 | package | what |
 | --- | --- |
 | [`@lama/split`](packages/split) | splits blocks of text into the lines the browser painted — every block measured before any is cut, every original node put back on revert |
+| [`@lama/motion`](packages/motion) | retargetable, velocity-preserving spring motion — a spring is state, interactions only set targets; a DOM adapter, hover/press/drag bindings, and a FLIP registry whose flights re-read their destination every frame |
 
 ## Install
 
@@ -21,6 +22,8 @@ so a project can depend on one straight from GitHub without an npm publish:
 ```sh
 npm install
 npm run build     # every package's dist/
+npm test          # vitest, where a package has tests
+npm run dev -w @lama/motion   # the motion playground
 ```
 
 Each package builds with `tsc` to its own `dist/` (declarations included) and

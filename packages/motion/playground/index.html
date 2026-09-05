@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>@lama/motion — flip playground</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="bar">
+    <strong>@lama/motion</strong>
+    <nav class="layouts" id="layouts">
+      <button data-layout="grid" class="on">grid</button>
+      <button data-layout="row">row</button>
+      <button data-layout="masonry">masonry</button>
+      <button data-layout="featured">featured</button>
+      <button data-layout="list">list</button>
+      <button data-layout="stack">stack</button>
+    </nav>
+    <div class="actions">
+      <button id="shuffle">shuffle</button>
+      <button id="drop">drop one</button>
+      <button id="add">add one</button>
+      <label><input type="checkbox" id="chaos" /> chaos (retarget every 400ms)</label>
+    </div>
+    <div class="tune">
+      <label>response <input type="range" id="response" min="0.2" max="1.4" step="0.01" value="0.625" /><output id="responseOut">0.625</output></label>
+      <label>damping <input type="range" id="damping" min="0.3" max="1.2" step="0.01" value="0.94" /><output id="dampingOut">0.94</output></label>
+    </div>
+    <a href="./carousel.html" style="color: var(--muted)">carousel →</a>
+    <div class="hud" id="hud">flying 0</div>
+  </header>
+
+  <main id="main">
+    <section id="page"></section>
+
+    <section class="drag-demo">
+      <h2>drag → fling handoff</h2>
+      <div class="track" id="track">
+        <div class="knob" id="knob"></div>
+      </div>
+      <p>Drag the knob and let go. The finger's velocity becomes the spring's velocity; the release target is the projected fling, clamped to the track.</p>
+    </section>
+  </main>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

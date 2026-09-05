@@ -1,8 +1,9 @@
 # lama
 
 Jesper Landberg's front-end packages, one repo, published one at a time under
-`@lama`. Today: `packages/split` (`@lama/split`). An umbrella (`lama.create.split()`,
-`@lama/domgl`, `@lama/motion`) is an idea to discuss, not built.
+`@lama`. Today: `packages/split` (`@lama/split`) and `packages/motion` (`@lama/motion`,
+moved in from `~/Documents/web/motion` on 2026-09-05, unreleased). An umbrella
+(`lama.create.split()`, `@lama/domgl`) is an idea to discuss, not built.
 
 ## Working here
 
@@ -17,6 +18,9 @@ Jesper Landberg's front-end packages, one repo, published one at a time under
   subfolder of a git repo, and nothing is on npmjs yet (`@lama` scope not claimed).
   Ascension (`~/Documents/web/ascension`) is the first consumer, lines only,
   through `app/transitions/lines.ts`.
+- `npm test` runs vitest in every package that has tests (motion does; split is
+  verified against real pages, see below). Playgrounds are dev-only and stay out
+  of the tarball via `files`.
 - Comments explain the why, in prose. Read a package's `src/index.ts` header before
   changing it: it states what is handled, what is left alone and why.
 
@@ -39,3 +43,21 @@ Jesper Landberg's front-end packages, one repo, published one at a time under
 - Open: publish to npmjs under `@lama`; a canvas measurer behind `Reader.run`
   (Pretext-style predicted breaks — only with a DOM-vs-canvas harness);
   `hyphens: auto`, drop caps, floats, RTL/vertical (deliberately out).
+
+## @lama/motion — the bar
+
+- A spring is state (`value`, `velocity`, `target`); an interaction only calls
+  `setTarget` / `addVelocity` / `snap`. Nothing is cancelled, no tween exists.
+  The step is closed-form, so one big step equals many small ones — that is a
+  test, keep it one.
+- Springs never know about elements. Adapters (`DomAdapter`, `applyFlipToDom`)
+  are the only writers, in the ticker's write phase; layout reads happen in the
+  step phase. A GL layer is another writer of the same numbers, not a port.
+- Flights re-read their destination every frame; "Last" is never a snapshot.
+  Scroll shifts a flight's value, not its target.
+- Verified by `npm test -w @lama/motion` (33 tests: dt-independence, retarget
+  continuity, bindings, hold → claim, scroll) and by the playground
+  (`npm run dev -w @lama/motion`: layouts, hold → claim, chaos, drag → fling,
+  and `/carousel.html` with the HTML/WebGPU writer toggle). A consumer,
+  `~/Documents/web/motion-demo`, still points at `file:../motion` under the old
+  name `@domgl/motion`.

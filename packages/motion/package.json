@@ -1,0 +1,69 @@
+{
+  "name": "@lama/motion",
+  "version": "0.0.1",
+  "description": "Retargetable, velocity-preserving spring motion for the DOM and WebGL/WebGPU — a spring is state, interactions only set targets, and a FLIP registry whose flights re-read their destination every frame.",
+  "keywords": [
+    "spring",
+    "motion",
+    "animation",
+    "physics",
+    "flip",
+    "drag",
+    "fling",
+    "webgpu",
+    "dom"
+  ],
+  "license": "MIT",
+  "author": "Jesper Landberg",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js",
+      "default": "./dist/core/index.js"
+    },
+    "./dom": {
+      "types": "./dist/dom/index.d.ts",
+      "import": "./dist/dom/index.js",
+      "default": "./dist/dom/index.js"
+    },
+    "./flip": {
+      "types": "./dist/flip/index.d.ts",
+      "import": "./dist/flip/index.js",
+      "default": "./dist/flip/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "watch": "tsc -p tsconfig.build.json --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "vite --config playground/vite.config.ts",
+    "prepack": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jesperlandberg/lama.git",
+    "directory": "packages/motion"
+  },
+  "homepage": "https://github.com/jesperlandberg/lama/tree/main/packages/motion#readme",
+  "bugs": "https://github.com/jesperlandberg/lama/issues",
+  "publishConfig": {
+    "access": "public"
+  }
+}
