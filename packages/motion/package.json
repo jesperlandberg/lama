@@ -1,6 +1,6 @@
 {
   "name": "@lama/motion",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Retargetable, velocity-preserving spring motion for the DOM and WebGL/WebGPU — a spring is state, interactions only set targets, and a FLIP registry whose flights re-read their destination every frame.",
   "keywords": [
     "spring",
