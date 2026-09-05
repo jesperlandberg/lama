@@ -1,0 +1,50 @@
+{
+  "name": "@lama/split",
+  "version": "0.1.0",
+  "description": "Splits blocks of text into the lines the browser painted — every block measured before any is cut, every original node put back on revert.",
+  "keywords": [
+    "text",
+    "split",
+    "lines",
+    "typography",
+    "animation",
+    "reveal",
+    "dom",
+    "splittext"
+  ],
+  "license": "MIT",
+  "author": "Jesper Landberg",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepack": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jesperlandberg/lama.git",
+    "directory": "packages/split"
+  },
+  "homepage": "https://github.com/jesperlandberg/lama/tree/main/packages/split#readme",
+  "bugs": "https://github.com/jesperlandberg/lama/issues",
+  "publishConfig": {
+    "access": "public"
+  }
+}

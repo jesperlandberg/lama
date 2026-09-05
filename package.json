@@ -1,0 +1,15 @@
+{
+  "name": "lama",
+  "private": true,
+  "description": "Jesper Landberg's front-end packages — one repo, independent packages under @lama.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
