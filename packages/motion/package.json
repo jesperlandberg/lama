@@ -53,7 +53,6 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "dev": "vite --config playground/vite.config.ts",
     "prepack": "npm run build"
   },
   "repository": {

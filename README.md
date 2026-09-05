@@ -23,7 +23,6 @@ so a project can depend on one straight from GitHub without an npm publish:
 npm install
 npm run build     # every package's dist/
 npm test          # vitest, where a package has tests
-npm run dev -w @lama/motion   # the motion playground
 ```
 
 Each package builds with `tsc` to its own `dist/` (declarations included) and

@@ -109,48 +109,6 @@ whose element is gone has nothing to write to in the DOM — a page transition t
 needs a visible stand-in during the gap renders one from `flip.pose(id)` (a GL
 plane does this natively).
 
-## Playground
-
-```sh
-npm run dev -w @lama/motion     # from the repo root
-```
-
-Image field with six layouts (grid, row, masonry, featured, list, stack), shuffle,
-add/drop, a card → detail "navigation" that runs hold → claim, chaos mode that
-retargets every 400 ms, live tuning sliders, and a drag → fling knob.
-
-`/carousel.html` — the engine demo. A draggable strip of landscape cards that
-opens into a case study. One `offset` spring (drag, fling, snap), one `focus`
-spring per card (grows it in place and pushes the others out by half its extra
-width, symmetric), and one `view` spring (0 = strip, 1 = case study): every card
-has a rect in both layouts and shows `mix(strip, case, view)`. The clicked card
-grows, then travels to the top as the hero; the others land in a strip at the
-bottom (the hero's slot stays empty — that is where it came from); a column of
-planes rises in between; the page becomes scrollable. Click the hero or press
-Escape to fold it back; click a bottom card to swap heroes, and a `scroll`
-spring carries the page back to the top (the wheel interrupts it). Everything
-is a transform; interactions only ever call `setTarget` / `addVelocity`.
-
-The toggle at the top switches the WRITER, never the model: **HTML** writes
-transforms to the card boxes; **WebGPU** writes the same numbers, plus the
-springs' velocities, into 256-byte uniform slices and draws liquid glass planes
-on one canvas over the page (`playground/glass.ts`, in the shape of the
-domgl-sync-webgpu layer). Each plane is a real glass slab: the fragment
-raymarches a 3D SDF (rounded rect, extruded, rounded edges), refracts into it at
-three refractive indices and reads the picture off the back face, so the rim
-bends and disperses the image like thick glass, with specular and Fresnel from a
-fixed key light. A `tilt` spring leans the cards into a drag or fling (its
-target is a readout of the strip's velocity) and springs them upright; HTML
-applies it as `rotateY`, WebGPU turns the slab in 3D. The crop window slides
-with each card's place on screen (parallax) in both writers. Every other card is
-a short clip from `playground/public/vid` (kept out of git — drop any four
-mp4s named `bunny`, `jellyfish`, `sintel`, `bunny720` there; a clip that is
-missing falls back to a still): the card's own `<video>` is what the HTML
-writer shows and what the GL writer imports as an external texture each
-frame, so a clip decodes once. Edges are supersampled 2×2 in the shader — they
-are shader-made, so MSAA cannot help. Flip the toggle mid-fling and the motion
-carries on.
-
 ## Params
 
 Perceptual: `{ response, dampingRatio | bounce, mass? }` — `response` ≈ seconds to settle

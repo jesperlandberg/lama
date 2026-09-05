@@ -19,8 +19,7 @@ moved in from `~/Documents/web/motion` on 2026-09-05, unreleased). An umbrella
   Ascension (`~/Documents/web/ascension`) is the first consumer, lines only,
   through `app/transitions/lines.ts`.
 - `npm test` runs vitest in every package that has tests (motion does; split is
-  verified against real pages, see below). Playgrounds are dev-only and stay out
-  of the tarball via `files`.
+  verified against real pages, see below).
 - Comments explain the why, in prose. Read a package's `src/index.ts` header before
   changing it: it states what is handled, what is left alone and why.
 
@@ -56,8 +55,8 @@ moved in from `~/Documents/web/motion` on 2026-09-05, unreleased). An umbrella
 - Flights re-read their destination every frame; "Last" is never a snapshot.
   Scroll shifts a flight's value, not its target.
 - Verified by `npm test -w @lama/motion` (33 tests: dt-independence, retarget
-  continuity, bindings, hold → claim, scroll) and by the playground
-  (`npm run dev -w @lama/motion`: layouts, hold → claim, chaos, drag → fling,
-  and `/carousel.html` with the HTML/WebGPU writer toggle). A consumer,
+  continuity, bindings, hold → claim, scroll). The old playground (layouts,
+  hold → claim, chaos, drag → fling, a WebGPU glass carousel) lives on in
+  `~/Documents/web/motion/playground`, outside the repo. A consumer,
   `~/Documents/web/motion-demo`, still points at `file:../motion` under the old
   name `@domgl/motion`.
