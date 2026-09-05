@@ -20,7 +20,7 @@ if (!name) {
 }
 
 const dir = `packages/${name}`
-const run = (cmd, cwd = '.') => execSync(cmd, { stdio: 'inherit', cwd })
+const run = (cmd, cwd = '.', input) => execSync(cmd, { stdio: input === undefined ? 'inherit' : ['pipe', 'inherit', 'inherit'], cwd, input })
 const out = (cmd, cwd = '.') => execSync(cmd, { encoding: 'utf8', cwd }).trim()
 
 if (out('git status --porcelain')) {
@@ -41,10 +41,10 @@ mkdirSync('.release', { recursive: true })
 run('npm run build', dir)
 run(`npm pack --pack-destination ${process.cwd()}/.release`, dir)
 
-run(`git add ${dir}/package.json`)
+run(`git add ${dir}/package.json package-lock.json`)
 run(`git commit -q -m "release(${name}): ${version}"`)
 run(`git tag ${tag}`)
 run('git push -q --follow-tags')
-run(`gh release create ${tag} .release/${file} --title "${pkg.name} ${version}" --notes "Install straight from this release:\n\n\\"${pkg.name}\\": \\"${url}\\""`)
+run(`gh release create ${tag} .release/${file} --title "${pkg.name} ${version}" --notes-file -`, '.', `Install straight from this release:\n\n"${pkg.name}": "${url}"\n`)
 
 console.log(`\n${pkg.name} ${version}\n${url}`)
