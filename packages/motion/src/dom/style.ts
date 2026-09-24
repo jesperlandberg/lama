@@ -4,10 +4,15 @@ import type { Ticker } from '../core/ticker.js';
 
 /**
  * The DOM write side. Springs never know about elements; this adapter reads
- * spring values in the ticker's write phase and writes styles. A binding
- * writes only on frames where one of its springs moved (plus one frame after
- * it settles, so the final value lands exactly), so a settled page costs no
- * style writes at all.
+ * spring values in the ticker's write phase and writes styles.
+ *
+ * A binding writes when a value it wrote has changed, and is silent
+ * otherwise, so a settled page costs no style writes. The test is the value
+ * itself, never the awake flag: `snap()` moves a spring and leaves it
+ * asleep, a spring can wake and settle inside one tick, and a consumer can
+ * write into a `SpringSet`'s arrays directly — a flag misses all three,
+ * while the numbers cannot lie about themselves. Comparing a handful of
+ * floats per binding is cheaper than composing the string it would write.
  */
 
 export interface TransformSprings {
@@ -60,6 +65,16 @@ function setStyle(el: Styleable, prop: string, value: string): void {
 
 type Binding = { write(force: boolean): void };
 
+/** True when any spring's value differs from the one stored in `last`; stores the new ones. */
+function changed(springs: readonly Spring[], last: Float64Array): boolean {
+  let moved = false;
+  for (let i = 0; i < springs.length; i++) {
+    const v = springs[i]!.value;
+    if (v !== last[i]) { last[i] = v; moved = true; }
+  }
+  return moved;
+}
+
 export class DomAdapter {
   private bindings = new Set<Binding>();
   private off: () => void;
@@ -77,14 +92,12 @@ export class DomAdapter {
    */
   transform(el: Styleable, springs: TransformSprings): () => void {
     const list = Object.values(springs).filter(Boolean) as Spring[];
-    let wasAwake = true; // write once on bind
+    const last = new Float64Array(list.length).fill(NaN);
 
     const b: Binding = {
       write: (force) => {
-        let awake = false;
-        for (const s of list) if (!s.sleeping) { awake = true; break; }
-        if (!force && !awake && !wasAwake) return;
-        wasAwake = awake;
+        const moved = changed(list, last);
+        if (!force && !moved) return;
 
         const sx = springs.scaleX?.value ?? springs.scale?.value;
         const sy = springs.scaleY?.value ?? springs.scale?.value;
@@ -105,13 +118,38 @@ export class DomAdapter {
    */
   style(el: Styleable, prop: string, spring: Spring, format: ((v: number) => string) | string = ''): () => void {
     const f = typeof format === 'string' ? (v: number) => fmt(v) + format : format;
-    let wasAwake = true;
+    let last = NaN;
     const b: Binding = {
       write: (force) => {
-        const awake = !spring.sleeping;
-        if (!force && !awake && !wasAwake) return;
-        wasAwake = awake;
-        setStyle(el, prop, f(spring.value));
+        const v = spring.value;
+        if (!force && v === last) return;
+        last = v;
+        setStyle(el, prop, f(v));
+      },
+    };
+    b.write(true);
+    this.bindings.add(b);
+    return () => { this.bindings.delete(b); };
+  }
+
+  /**
+   * The fan-out: run `write` in the write phase whenever any of `springs`
+   * moved. This is how one spring drives several things at once — a scale
+   * here, an opacity there, a colour mix, a sibling element, a canvas — with
+   * the adapter still deciding when there is anything to do.
+   *
+   *   dom.bind([hover], () => {
+   *     card.style.transform = `scale(${1 + hover.value * 0.05})`;
+   *     glow.style.opacity = String(hover.value);
+   *   });
+   */
+  bind(springs: Iterable<Spring>, write: () => void): () => void {
+    const list = [...springs];
+    const last = new Float64Array(list.length).fill(NaN);
+    const b: Binding = {
+      write: (force) => {
+        const moved = changed(list, last);
+        if (force || moved) write();
       },
     };
     b.write(true);
@@ -122,24 +160,35 @@ export class DomAdapter {
   /**
    * Drive many elements from one SpringSet: element i reads spring i, with
    * `channels` naming which channel index feeds which transform part.
-   * Only awake springs (and those that just settled) are written.
+   * An element is written only when one of the channels it reads changed.
    */
   setTransforms(els: ArrayLike<Styleable>, set: SpringSet, channels: SetTransformChannels): () => void {
     const n = Math.min(els.length, set.count);
-    const was = new Uint8Array(n).fill(1);
     const C = set.channels;
+    const used: number[] = [];
+    for (const key of ['x', 'y', 'scale', 'scaleX', 'scaleY', 'rotate', 'opacity'] as const) {
+      const c = channels[key];
+      if (c === undefined) continue;
+      if (!Number.isInteger(c) || c < 0 || c >= C) throw new RangeError(`@lama/motion: channel ${key} must be an integer in [0, ${C}) (got ${c})`);
+      used.push(c);
+    }
+    const last = new Float64Array(n * used.length).fill(NaN);
     const ch = (i: number, c: number | undefined) => (c === undefined ? undefined : set.values[i * C + c]);
 
     const b: Binding = {
       write: (force) => {
         for (let i = 0; i < n; i++) {
-          const awake = set.awake[i]!;
-          if (!force && !awake && !was[i]) continue;
-          was[i] = awake;
+          let moved = false;
+          const base = i * used.length;
+          for (let u = 0; u < used.length; u++) {
+            const v = set.values[i * C + used[u]!]!;
+            if (v !== last[base + u]) { last[base + u] = v; moved = true; }
+          }
+          if (!force && !moved) continue;
           const el = els[i]!;
           const sx = ch(i, channels.scaleX) ?? ch(i, channels.scale);
           const sy = ch(i, channels.scaleY) ?? ch(i, channels.scale);
-          if (channels.x !== undefined || channels.y !== undefined || channels.rotate !== undefined || sx !== undefined) {
+          if (channels.x !== undefined || channels.y !== undefined || channels.rotate !== undefined || sx !== undefined || sy !== undefined) {
             setStyle(el, 'transform', composeTransform(ch(i, channels.x), ch(i, channels.y), sx, sy, ch(i, channels.rotate)));
           }
           if (channels.opacity !== undefined) setStyle(el, 'opacity', fmt(ch(i, channels.opacity)!));

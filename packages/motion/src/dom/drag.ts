@@ -9,7 +9,9 @@ import type { PointerTarget } from './pointer.js';
  * into the spring and the target is set to where a fling would come to rest,
  * so the release is the same motion continued, not a new one started.
  *
- * Only `setTarget` and `addVelocity` are ever called on the springs.
+ * The springs only ever hear `setTarget` and `addVelocity` — plus the params
+ * swap `dragParams` asks for, which changes the feel without touching the
+ * state, and is handed back however the gesture ends.
  */
 
 export interface DragBounds {
@@ -59,7 +61,8 @@ export interface DragOptions {
   /** `axis` is the locked axis, or null when not locking. */
   onStart?(axis: 'x' | 'y' | null): void;
   onMove?(dx: number, dy: number): void;
-  onEnd?(vx: number, vy: number): void;
+  /** `cancelled` is true when the gesture was taken away rather than released: the velocities are then 0. */
+  onEnd?(vx: number, vy: number, cancelled: boolean): void;
   /** Clock in seconds — injectable for tests. */
   now?: () => number;
 }
@@ -124,7 +127,26 @@ export function bindDrag(el: PointerTarget & { style?: CSSStyleDeclaration | Rec
     vx.add(px, t); vy.add(py, t);
     root.addEventListener('pointermove', move);
     root.addEventListener('pointerup', up);
-    root.addEventListener('pointercancel', up);
+    root.addEventListener('pointercancel', cancel);
+  };
+
+  /**
+   * Leave the gesture: listeners off, and the drag params handed back. Every
+   * way out goes through here — a release, a cancel, an unbind mid-drag —
+   * because a spring left on `dragParams` keeps a stiffness that was only
+   * meant to last while a finger was down.
+   */
+  const leave = (): boolean => {
+    active = false;
+    id = -1;
+    root.removeEventListener('pointermove', move);
+    root.removeEventListener('pointerup', up);
+    root.removeEventListener('pointercancel', cancel);
+    if (savedX && x) { x.config = savedX; savedX = null; }
+    if (savedY && y) { y.config = savedY; savedY = null; }
+    const wasDragging = dragging;
+    dragging = false;
+    return wasDragging;
   };
 
   const begin = (dx: number, dy: number) => {
@@ -165,20 +187,11 @@ export function bindDrag(el: PointerTarget & { style?: CSSStyleDeclaration | Rec
   const up = (e: Event) => {
     if (!active) return;
     if (((e as PE).pointerId ?? 0) !== id) return;
-    active = false;
-    id = -1;
-    root.removeEventListener('pointermove', move);
-    root.removeEventListener('pointerup', up);
-    root.removeEventListener('pointercancel', up);
-    if (!dragging) return;
-    dragging = false;
-
     const t = now();
+    if (!leave()) { axis = null; return; }
+
     const cap = opts.maxVelocity ?? 6000;
     const velX = clamp(vx.velocity(t) * sx, -cap, cap), velY = clamp(vy.velocity(t) * sy, -cap, cap);
-
-    if (savedX && x) { x.config = savedX; savedX = null; }
-    if (savedY && y) { y.config = savedY; savedY = null; }
 
     const settle = (axis: 'x' | 'y', s: Spring, v: number, lo?: number, hi?: number) => {
       let target: number;
@@ -192,16 +205,35 @@ export function bindDrag(el: PointerTarget & { style?: CSSStyleDeclaration | Rec
     if (y && axis !== 'x') settle('y', y, velY, b.minY, b.maxY);
     axis = null;
 
-    opts.onEnd?.(velX, velY);
+    opts.onEnd?.(velX, velY, false);
+  };
+
+  /**
+   * The gesture was taken away, not released: the browser claimed the pointer
+   * for its own scroll, the element was removed, the system interrupted. The
+   * speed the tracker holds belongs to a movement the user never finished, so
+   * no velocity is handed over and nothing is flung. The spring keeps what it
+   * has and is aimed back inside the bounds, so a rubberbanded overshoot
+   * comes home instead of hanging outside them.
+   */
+  const cancel = (e: Event) => {
+    if (!active) return;
+    if (((e as PE).pointerId ?? 0) !== id) return;
+    if (!leave()) { axis = null; return; }
+
+    if (x && axis !== 'y') x.setTarget(clamp(x.target, b.minX, b.maxX));
+    if (y && axis !== 'x') y.setTarget(clamp(y.target, b.minY, b.maxY));
+    axis = null;
+
+    opts.onEnd?.(0, 0, true);
   };
 
   el.addEventListener('pointerdown', down);
 
   return () => {
     el.removeEventListener('pointerdown', down);
-    root.removeEventListener('pointermove', move);
-    root.removeEventListener('pointerup', up);
-    root.removeEventListener('pointercancel', up);
+    leave();
+    axis = null;
     if (style) style.touchAction = prevTouch ?? '';
   };
 }

@@ -47,9 +47,16 @@ export class Ticker {
     return () => this.writers.delete(fn);
   }
 
-  /** Advance everything by dt seconds. Call this from an external render loop. */
+  /**
+   * Advance everything by dt seconds. Call this from an external render loop.
+   *
+   * dt is clamped into [0, maxDt] and a non-finite one is read as 0: a NaN dt
+   * (a clock that went backwards, a first frame with no previous timestamp)
+   * would otherwise reach every spring's coefficients and turn the whole page
+   * into NaN, with no way back. A dt of 0 steps nothing and still writes.
+   */
   tick(dt: number): void {
-    const d = Math.min(dt, this.maxDt);
+    const d = Number.isFinite(dt) ? Math.min(Math.max(dt, 0), this.maxDt) : 0;
     for (const s of this.steppables) s.step(d);
     for (const w of this.writers) w(d);
   }

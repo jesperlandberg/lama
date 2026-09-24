@@ -52,6 +52,81 @@ describe('DomAdapter', () => {
     expect(els[0]!.style.transform).toBe('translate3d(0px, 0px, 0) scale(1, 1)');
   });
 
+  it('a snap on a settled spring still reaches the element', () => {
+    const ticker = new Ticker({ fixedDt: 1 / 60 });
+    const dom = new DomAdapter(ticker);
+    const el = new FakeEl();
+    const x = new Spring(0, params);
+    ticker.add(x);
+    dom.transform(el as never, { x });
+    ticker.tick(1 / 60);
+
+    x.snap(100); // instant, and asleep again — which is not the same as unchanged
+    ticker.tick(1 / 60);
+    expect(el.style.transform).toBe('translate3d(100px, 0px, 0)');
+  });
+
+  it('a spring that wakes and settles inside one tick is still written', () => {
+    const ticker = new Ticker();
+    const dom = new DomAdapter(ticker);
+    const el = new FakeEl();
+    const s = new Spring(0, params, { restDisplacement: 0.5, restVelocity: 5 });
+    ticker.add(s);
+    dom.style(el as never, 'opacity', s);
+    s.setTarget(0.25); // inside the rest thresholds: one step lands it
+    ticker.tick(1 / 60);
+    expect(s.sleeping).toBe(true);
+    expect(el.style.opacity).toBe('0.25');
+  });
+
+  it('a batch binding on scaleY alone writes', () => {
+    const ticker = new Ticker();
+    const dom = new DomAdapter(ticker);
+    const el = new FakeEl();
+    const set = new SpringSet(1, 1, params);
+    set.snap(0, 2);
+    dom.setTransforms([el] as never, set, { scaleY: 0 });
+    expect(el.style.transform).toBe('scale(1, 2)');
+  });
+
+  it('a snap into a batch reaches the elements it drives', () => {
+    const ticker = new Ticker();
+    const dom = new DomAdapter(ticker);
+    const els = [new FakeEl(), new FakeEl()];
+    const set = new SpringSet(2, 1, params);
+    ticker.add(set);
+    dom.setTransforms(els as never, set, { x: 0 });
+    ticker.tick(1 / 60);
+    set.snap(1, 40);
+    ticker.tick(1 / 60);
+    expect(els[1]!.style.transform).toBe('translate3d(40px, 0px, 0)');
+    expect(els[0]!.style.transform).toBe('translate3d(0px, 0px, 0)');
+  });
+
+  it('bind() fans one spring out to whatever the callback touches', () => {
+    const ticker = new Ticker();
+    const dom = new DomAdapter(ticker);
+    const card = new FakeEl(), glow = new FakeEl();
+    const hover = new Spring(0, params);
+    ticker.add(hover);
+    let writes = 0;
+    dom.bind([hover], () => {
+      writes++;
+      card.style.transform = `scale(${1 + hover.value * 0.05})`;
+      glow.style.opacity = String(hover.value);
+    });
+    expect(writes).toBe(1);          // once on bind
+
+    hover.setTarget(1);
+    for (let i = 0; i < 300; i++) ticker.tick(1 / 60);
+    expect(card.style.transform).toBe('scale(1.05)');
+    expect(glow.style.opacity).toBe('1');
+
+    const settled = writes;
+    ticker.tick(1 / 60);
+    expect(writes).toBe(settled);    // nothing moved, nothing written
+  });
+
   it('writes custom properties via setProperty when available', () => {
     const ticker = new Ticker();
     const dom = new DomAdapter(ticker);
@@ -176,6 +251,41 @@ describe('bindDrag', () => {
     expect(x.target).toBe(50);
     fire(el, 'pointerup', { clientX: 50, clientY: 3 });
     expect(axes).toEqual(['y', 'x']);
+  });
+
+  it('a cancelled gesture ends without a fling', () => {
+    let t = 0;
+    const el = new FakeEl();
+    const x = new Spring(0, params);
+    const ends: [number, number, boolean][] = [];
+    bindDrag(el, {
+      x, now: () => t, threshold: 0, bounds: { minX: 0, maxX: 100 }, rubberband: 0.5,
+      onEnd: (vx, vy, cancelled) => ends.push([vx, vy, cancelled]),
+    });
+    fire(el, 'pointerdown', { clientX: 0 });
+    t = 0.02;
+    fire(el, 'pointermove', { clientX: 200 }); // 10000 px/s, rubberbanded to 150
+    expect(x.target).toBe(150);
+
+    fire(el, 'pointercancel', { clientX: 200 });
+    expect(x.velocity).toBe(0);   // the movement was never finished: no velocity to hand over
+    expect(x.target).toBe(100);   // and the overshoot comes home
+    expect(ends).toEqual([[0, 0, true]]);
+  });
+
+  it('unbinding mid-drag hands the drag params back', () => {
+    let t = 0;
+    const el = new FakeEl();
+    const x = new Spring(0, params);
+    const resting = x.config;
+    const off = bindDrag(el, { x, now: () => t, threshold: 0, dragParams: { response: 0.1, dampingRatio: 1 } });
+    fire(el, 'pointerdown', { clientX: 0 });
+    t = 0.02;
+    fire(el, 'pointermove', { clientX: 50 });
+    expect(x.config.stiffness).not.toBe(resting.stiffness);
+    off();
+    expect(x.config).toBe(resting);
+    expect(el.style.touchAction).toBe('');
   });
 
   it('a tap under the threshold does nothing', () => {

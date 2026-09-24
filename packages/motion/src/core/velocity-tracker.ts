@@ -64,7 +64,14 @@ export class VelocityTracker {
  * rate. Adding this to the release position gives the natural resting target;
  * the spring then carries the hand's velocity into it, so the deceleration is
  * the spring's own instead of a separate friction curve.
+ *
+ * The rate is a fraction of speed kept per millisecond, so it has to stay
+ * below 1: at 1 the fling never slows and the projection is infinite. It is
+ * clamped rather than refused — a caller tuning by feel should get a very
+ * long throw, not an exception.
  */
 export function projectFling(velocity: number, decelerationRate = 0.998): number {
-  return ((velocity / 1000) * decelerationRate) / (1 - decelerationRate);
+  if (!Number.isFinite(velocity)) return 0;
+  const rate = Math.min(Math.max(Number.isFinite(decelerationRate) ? decelerationRate : 0.998, 0), 0.9999);
+  return ((velocity / 1000) * rate) / (1 - rate);
 }

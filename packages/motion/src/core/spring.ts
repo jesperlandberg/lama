@@ -8,6 +8,8 @@
  * system retargetable and velocity-preserving.
  */
 
+import { finite, nonNegative, positive } from './guard.js';
+
 export interface PhysicalParams {
   stiffness: number; // k
   damping: number;   // c
@@ -16,8 +18,11 @@ export interface PhysicalParams {
 
 /**
  * Perceptual params. `response` is roughly the time (s) the spring takes to
- * reach its target when critically damped. `dampingRatio` 1 = no overshoot,
- * < 1 = bouncy, > 1 = sluggish. `bounce` (0..1) is an alias for 1 - dampingRatio.
+ * reach its target when critically damped — a tuning number, not a promise of
+ * a duration. `dampingRatio` 1 = no overshoot, < 1 = bouncy, > 1 = sluggish;
+ * 0 is undamped and never settles. `bounce` (0..1) is an alias for
+ * 1 - dampingRatio, so a bounce above 1 is refused: it would mean negative
+ * damping, a spring that gains energy every frame and leaves the screen.
  */
 export interface PerceptualParams {
   response: number;
@@ -43,10 +48,16 @@ export function isPerceptual(p: SpringParams): p is PerceptualParams {
 
 /** Convert perceptual (response, dampingRatio) to physical (k, c, m). */
 export function toPhysical(p: SpringParams): PhysicalParams {
-  if (!isPerceptual(p)) return { stiffness: p.stiffness, damping: p.damping, mass: p.mass };
-  const mass = p.mass ?? 1;
-  const zeta = p.dampingRatio ?? (p.bounce !== undefined ? 1 - p.bounce : 1);
-  const omega0 = (2 * Math.PI) / Math.max(p.response, 1e-4);
+  if (!isPerceptual(p)) {
+    return {
+      stiffness: positive(p.stiffness, 'stiffness'),
+      damping: nonNegative(p.damping, 'damping'),
+      mass: positive(p.mass, 'mass'),
+    };
+  }
+  const mass = positive(p.mass ?? 1, 'mass');
+  const zeta = nonNegative(p.dampingRatio ?? (p.bounce !== undefined ? 1 - p.bounce : 1), 'dampingRatio');
+  const omega0 = (2 * Math.PI) / Math.max(positive(p.response, 'response'), 1e-4);
   const stiffness = mass * omega0 * omega0;
   const damping = 2 * zeta * Math.sqrt(stiffness * mass);
   return { stiffness, damping, mass };
@@ -55,8 +66,8 @@ export function toPhysical(p: SpringParams): PhysicalParams {
 export function resolveConfig(p: SpringParams, rest?: Partial<Pick<SpringConfig, 'restVelocity' | 'restDisplacement'>>): SpringConfig {
   return {
     ...toPhysical(p),
-    restVelocity: rest?.restVelocity ?? DEFAULT_REST_VELOCITY,
-    restDisplacement: rest?.restDisplacement ?? DEFAULT_REST_DISPLACEMENT,
+    restVelocity: positive(rest?.restVelocity ?? DEFAULT_REST_VELOCITY, 'restVelocity'),
+    restDisplacement: positive(rest?.restDisplacement ?? DEFAULT_REST_DISPLACEMENT, 'restDisplacement'),
   };
 }
 
@@ -152,8 +163,8 @@ export class Spring implements SpringState {
   sleeping = true;
 
   constructor(initial: number, params: SpringParams, rest?: Partial<Pick<SpringConfig, 'restVelocity' | 'restDisplacement'>>) {
-    this.value = initial;
-    this.target = initial;
+    this.value = finite(initial, 'initial value');
+    this.target = this.value;
     this.config = resolveConfig(params, rest);
   }
 
@@ -164,7 +175,7 @@ export class Spring implements SpringState {
 
   /** Retarget. Never touches value or velocity — motion stays continuous. */
   setTarget(target: number): this {
-    if (target !== this.target) {
+    if (finite(target, 'target') !== this.target) {
       this.target = target;
       this.sleeping = false;
     }
@@ -173,14 +184,14 @@ export class Spring implements SpringState {
 
   /** Inject velocity (fling, drag release). */
   addVelocity(dv: number): this {
-    this.velocity += dv;
+    this.velocity += finite(dv, 'velocity');
     this.sleeping = false;
     return this;
   }
 
   /** Jump instantly, no motion. */
   snap(value: number): this {
-    this.value = value;
+    this.value = finite(value, 'value');
     this.target = value;
     this.velocity = 0;
     this.sleeping = true;

@@ -261,4 +261,41 @@ describe('applyFlipToDom', () => {
     expect(e.applied).toBeNull();
     void tick;
   });
+
+  it('lands on the destination radius although the writer owns border-radius', () => {
+    // A browser-ish reader: the inline radius the writer puts on the element
+    // is what getComputedStyle reports back, so a flight that re-read it
+    // every frame would be chasing its own output.
+    const fromStyle = (el: Element) => {
+      const f = el as unknown as FakeEl;
+      return f.style.borderRadius ? parseFloat(f.style.borderRadius) : f.radius;
+    };
+    const flip = new Flip({ now: () => 0, measure, radius: fromStyle, scroll: () => ({ x: 0, y: 0 }) });
+    const ticker = new Ticker();
+    ticker.add(flip);
+    applyFlipToDom(flip, ticker);
+
+    // Same radius at both ends, four times the size: the inline value the
+    // writer needs (radius ÷ scale) is then nothing like the element's own,
+    // and reading it back feeds the radius spring its own output.
+    const el = new FakeEl(R(0, 0, 100, 100), 40);
+    const e = flip.register('a', el as never);
+    ticker.tick(1 / 60);
+
+    flip.mutate(() => { el.rect = R(0, 0, 400, 400); });
+    // Mid-flight is where it shows: both ends are 40, so the corner must
+    // never leave 40. Reading the writer's inline value back used to send it
+    // climbing past 130 — a visibly rounder card — before it healed itself a
+    // frame after landing.
+    for (let i = 0; i < 8; i++) {
+      ticker.tick(1 / 60);
+      expect(e.radius).toBeCloseTo(40, 5);
+      expect(e.flight).not.toBeNull();
+    }
+
+    for (let i = 0; i < 400; i++) ticker.tick(1 / 60);
+    expect(e.flight).toBeNull();
+    expect(e.radius).toBe(40);
+    expect(el.style.borderRadius).toBe('');
+  });
 });

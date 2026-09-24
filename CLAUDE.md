@@ -53,9 +53,23 @@ moved in from `~/Documents/web/motion` on 2026-09-05, unreleased). An umbrella
   are the only writers, in the ticker's write phase; layout reads happen in the
   step phase. A GL layer is another writer of the same numbers, not a port.
 - Flights re-read their destination every frame; "Last" is never a snapshot.
-  Scroll shifts a flight's value, not its target.
-- Verified by `npm test -w @lama/motion` (33 tests: dt-independence, retarget
-  continuity, bindings, hold → claim, scroll). The old playground (layouts,
+  Scroll shifts a flight's value, not its target. The corner is the exception
+  and says so: `applyFlipToDom` owns `border-radius` while an element flies, so
+  a flight aims at `entry.baseRadius`, read while nothing was written. Reading
+  it live sent the radius climbing to three times the destination's mid-flight.
+- A writer decides by the values it wrote, never by the awake flag: `snap`
+  moves a spring and leaves it asleep, and a spring can wake and settle inside
+  one tick. Same rule for a GPU consumer, through `SpringSet.revision`.
+- Rest is a float32 question in a batch: past ~1000 px a frame's progress
+  rounds away, so a spring that cannot move any closer lands rather than
+  staying awake for ever.
+- A cancelled gesture is not a release: no fling, and the target returns inside
+  the bounds. Every way out of a drag hands `dragParams` back.
+- Numbers from a caller are checked at the setters and the params, never in the
+  step — a NaN in a spring is permanent.
+- Verified by `npm test -w @lama/motion` (50 tests: dt-independence, retarget
+  continuity, a chaos storm that must still come to rest, the write rule,
+  bindings, hold → claim, scroll, radius). The old playground (layouts,
   hold → claim, chaos, drag → fling, a WebGPU glass carousel) lives on in
   `~/Documents/web/motion/playground`, outside the repo. A consumer,
   `~/Documents/web/motion-demo`, still points at `file:../motion` under the old

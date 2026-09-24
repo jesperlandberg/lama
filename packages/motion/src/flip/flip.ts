@@ -65,6 +65,15 @@ export interface FlipEntry {
   pose: Rect | null;
   /** Corner radius accompanying `pose`. */
   radius: number;
+  /**
+   * The element's OWN corner radius, read while no writer was overriding it,
+   * and the radius a flight aims at. It is not re-read mid-flight the way the
+   * rect is: `applyFlipToDom` writes an inline `border-radius` to keep the
+   * corners round under the scale, so the computed value during a flight is
+   * the writer's, not the element's — reading it back would be the flight
+   * chasing its own tail.
+   */
+  baseRadius: number;
   /** The element's untransformed live rect this frame (null when dead). */
   layout: Rect | null;
   /** Stamped while settled: the flight's FROM should the element die. */
@@ -144,7 +153,7 @@ export class Flip implements Steppable {
 
     const entry: FlipEntry = {
       id, el,
-      pose: null, radius: 0, layout: null, lastRect: null,
+      pose: null, radius: 0, baseRadius: 0, layout: null, lastRect: null,
       flight: null, held: false, holdUntil: 0,
       offer: o.offer ?? false, data: o.data,
       applied: null,
@@ -197,9 +206,12 @@ export class Flip implements Steppable {
    */
   play(ids?: Iterable<string>): number {
     let started = 0;
-    const list = ids ? [...ids].map((id) => this.entries.get(id)).filter(Boolean) as FlipEntry[] : [...this.entries.values()];
-    for (const e of list) {
-      if (e.flight || !e.pose) continue;
+    // Iterated live, with no copy: play() runs every frame in a consumer that
+    // drives layout from a spring, and a per-frame array is a per-frame
+    // allocation. fly() only mutates entries, never the map.
+    for (const id of ids ?? this.entries.keys()) {
+      const e = this.entries.get(id);
+      if (!e || e.flight || !e.pose) continue;
       const live = this.measure(e);
       if (!live || sameRect(live, e.pose)) continue;
       this.fly(e, e.pose, e.radius);
@@ -219,7 +231,9 @@ export class Flip implements Steppable {
     const now = this.opts.now();
     let moving = false;
 
-    for (const e of [...this.entries.values()]) {
+    // Live iteration, no copy: retire() only ever deletes the entry the loop
+    // is standing on, which a Map iterator handles, and this runs every frame.
+    for (const e of this.entries.values()) {
       if (e.el.isConnected) {
         if (e.flight) {
           e.flight.step(dt);
@@ -282,17 +296,20 @@ export class Flip implements Steppable {
     e.layout = r;
     e.pose = r;
     e.lastRect = r;
-    e.radius = this.opts.radius(e.el);
+    e.radius = e.baseRadius = this.opts.radius(e.el);
   }
 
   private targetFor(e: FlipEntry) {
     return {
       rect: () => this.measure(e),
-      radius: () => this.opts.radius(e.el),
+      radius: () => e.baseRadius,
     };
   }
 
   private fly(e: FlipEntry, from: Rect, fromRadius: number): void {
+    // Read the destination's own radius now, while nothing is written on it;
+    // from here on the flight aims at this number (see `baseRadius`).
+    e.baseRadius = this.opts.radius(e.el);
     e.flight = new Flight(from, this.targetFor(e), { params: this.opts.params, scroll: this.opts.scroll }, fromRadius);
     e.pose = e.flight.pose;
   }
@@ -303,6 +320,8 @@ export class Flip implements Steppable {
     e.held = false;
     e.offer = o.offer ?? e.offer;
     if (o.data !== undefined) e.data = o.data;
+    // A fresh element, nothing written on it yet: its radius is the flight's.
+    e.baseRadius = this.opts.radius(el);
 
     if (!from) {
       this.settle(e);
@@ -320,7 +339,9 @@ export class Flip implements Steppable {
     e.pose = f.lastTarget ?? f.pose;
     e.layout = e.pose;
     e.lastRect = e.pose;
-    e.radius = this.opts.radius(e.el);
+    // The writer still has its inline radius on the element this frame and
+    // clears it in the write phase; `baseRadius` is what the flight landed on.
+    e.radius = e.baseRadius;
   }
 
   private retire(e: FlipEntry): void {
