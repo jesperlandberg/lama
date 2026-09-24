@@ -10,12 +10,17 @@ moved in from `~/Documents/web/motion` on 2026-09-05, unreleased). An umbrella
 - Packages are TypeScript, ES2022, `strict` + `noUncheckedIndexedAccess`, no
   dependencies, no framework. `dist/` is built with `tsc` and not committed.
 - `npm run build` builds every package; `npm run release -- <pkg> [patch|minor|major|x.y.z]`
-  bumps, builds, packs, commits `release(<pkg>): x.y.z`, tags `<pkg>-vx.y.z`
-  (annotated), pushes and creates the GitHub release with the tarball. Clean tree
-  and `gh` signed in required.
+  typechecks and tests, then bumps, builds, packs, commits `release(<pkg>): x.y.z`,
+  tags `<pkg>-vx.y.z` (annotated), pushes and creates the GitHub release with the
+  tarball. Clean tree and `gh` signed in required. `--npm` also publishes that
+  tarball to npmjs before anything is committed; it needs `npm login`, and a
+  refused publish undoes the bump.
 - Consumers install from the release tarball URL
   (`releases/download/split-vX.Y.Z/lama-split-X.Y.Z.tgz`) — npm cannot install a
-  subfolder of a git repo, and nothing is on npmjs yet (`@lama` scope not claimed).
+  subfolder of a git repo, and nothing is on npmjs yet. `@lama` there is not free:
+  it is the personal scope of an existing npm account named `lama` (checked
+  2026-09-24: `registry.npmjs.org/-/org/lama/user` answers `{"lama":"owner"}`, no
+  packages), so publishing under it needs that account, or another scope.
   Ascension (`~/Documents/web/ascension`) is the first consumer, lines only,
   through `app/transitions/lines.ts`.
 - `npm test` runs vitest in every package that has tests (motion does; split is

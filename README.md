@@ -32,8 +32,16 @@ packs itself on `npm pack` / release.
 
 ```sh
 npm run release -- split            # patch bump, or: minor | major | 1.2.3
+npm run release -- motion --npm     # the same, and the tarball goes to npm too
 ```
 
-Bumps the package, builds, packs, commits `release(split): x.y.z`, tags
-`split-vx.y.z`, pushes, and creates the GitHub release with the tarball. Then
-point the consuming project at the new URL the script prints.
+Typechecks and tests the package, then bumps it, builds, packs, commits
+`release(split): x.y.z`, tags `split-vx.y.z`, pushes, and creates the GitHub
+release with the tarball. Then point the consuming project at the new URL the
+script prints.
+
+`--npm` publishes that same tarball to npm right after it is packed, before
+anything is committed or pushed, so a refused publish undoes the bump and
+leaves the tree as it was. It needs `npm login` and
+`"publishConfig": { "access": "public" }` in the package; with 2FA on, npm asks
+for the one-time password as it publishes.
