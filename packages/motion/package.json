@@ -10,6 +10,8 @@
     "flip",
     "drag",
     "fling",
+    "gesture",
+    "webgl",
     "webgpu",
     "dom"
   ],
@@ -45,7 +47,10 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "src",
+    "!src/**/*.test.ts",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
