@@ -1,0 +1,54 @@
+{
+	"name": "@alpacka/smooth-stick",
+	"version": "0.0.0",
+	"description": "position: sticky with its corners rounded off — the element slows into its line and eases away from it, as a scroll-driven animation beside sticky.",
+	"keywords": [
+		"sticky",
+		"position-sticky",
+		"scroll",
+		"scroll-driven-animations",
+		"view-timeline",
+		"easing",
+		"animation",
+		"dom"
+	],
+	"license": "MIT",
+	"author": "Jesper Landberg",
+	"type": "module",
+	"sideEffects": false,
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"default": "./dist/index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"files": [
+		"dist",
+		"src",
+		"!src/**/*.test.ts",
+		"README.md"
+	],
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"watch": "tsc -p tsconfig.build.json --watch",
+		"typecheck": "tsc -p tsconfig.json --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"prepack": "npm run build"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/jesperlandberg/lama.git",
+		"directory": "packages/smooth-stick"
+	},
+	"homepage": "https://github.com/jesperlandberg/lama/tree/main/packages/smooth-stick#readme",
+	"bugs": "https://github.com/jesperlandberg/lama/issues",
+	"publishConfig": {
+		"access": "public"
+	}
+}

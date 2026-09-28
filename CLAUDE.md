@@ -2,8 +2,10 @@
 
 Jesper Landberg's front-end packages, one repo, published one at a time under
 `@lama`. Today: `packages/split` (`@lama/split`) and `packages/motion` (`@lama/motion`,
-moved in from `~/Documents/web/motion` on 2026-09-05, unreleased). An umbrella
-(`lama.create.split()`, `@lama/domgl`) is an idea to discuss, not built.
+moved in from `~/Documents/web/motion` on 2026-09-05, unreleased), and
+`packages/smooth-stick` (`@alpacka/smooth-stick`, 2026-09-28, the first under the
+studio's npm scope, see below). An umbrella (`lama.create.split()`, `@lama/domgl`)
+is an idea to discuss, not built.
 
 ## Working here
 
@@ -21,10 +23,15 @@ moved in from `~/Documents/web/motion` on 2026-09-05, unreleased). An umbrella
   it is the personal scope of an existing npm account named `lama` (checked
   2026-09-24: `registry.npmjs.org/-/org/lama/user` answers `{"lama":"owner"}`, no
   packages), so publishing under it needs that account, or another scope.
+  `@alpacka` is that other scope: the studio's, free when checked on 2026-09-28,
+  and smooth-stick is the first package under it. motion and split can move
+  there when they go to npm.
   Ascension (`~/Documents/web/ascension`) is the first consumer, lines only,
   through `app/transitions/lines.ts`.
-- `npm test` runs vitest in every package that has tests (motion does; split is
-  verified against real pages, see below).
+- `npm test` runs vitest in every package that has tests (motion and
+  smooth-stick do; split is verified against real pages, see below).
+- Tabs for indentation, shown four wide; no semicolons, single quotes. motion's
+  two spaces and semicolons came with it from its old repo.
 - Comments explain the why, in prose. Read a package's `src/index.ts` header before
   changing it: it states what is handled, what is left alone and why.
 
@@ -79,3 +86,29 @@ moved in from `~/Documents/web/motion` on 2026-09-05, unreleased). An umbrella
   `~/Documents/web/motion/playground`, outside the repo. A consumer,
   `~/Documents/web/motion-demo`, still points at `file:../motion` under the old
   name `@domgl/motion`.
+
+## @alpacka/smooth-stick — the bar
+
+- Sticky pins; the correction only rounds its two corners, and outside its two
+  windows it is exactly zero. So anything that stops it running (touch by
+  default, reduced motion, a breakpoint that unsticks the element, a browser
+  without scroll-driven animations on the compositor engine) leaves plain
+  sticky, and nothing about the layout ever depends on it.
+- A landing enters its window at exactly scroll speed: its travel is
+  span / E′(0). Any other distance puts a corner of its own at the window's
+  edge. Both of sticky's corners are exact keyframes; samples either side of
+  one leave a sliver of the stop standing.
+- The windows are `exit-crossing` offsets on the PARENT's view timeline, so a
+  parent that moves needs no new measure; only resizes do. The flow position is
+  read with the element set to `position: static` for one synchronous read.
+- `freeze()` commits the pose inline and drops the animation, for a page whose
+  scroll is reset under it while it is still on screen (a transition); a
+  `destroy()` after it keeps that pose.
+- Verified by `npm test -w @alpacka/smooth-stick` (the curve: windows, edge
+  slopes, continuity, monotonic, mirror, shrink, lead, eases) and on goldfront,
+  whose `app/lib/smooth-stick.ts` is the vendored first copy (the Text1 client
+  rail, the ideas post credits), scrolled in steps: sticky goes from scroll
+  speed to still in one step, the corrected element 0.95 → 0.49 at sticky's
+  corner → 0.01 and onto the line to the pixel; the main-thread engine gives
+  the same numbers. The first demo, plain sticky beside it in one layout, is
+  published as a private Claude artifact, not in the repo.
