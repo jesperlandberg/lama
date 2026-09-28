@@ -169,7 +169,7 @@ export class DomAdapter {
     for (const key of ['x', 'y', 'scale', 'scaleX', 'scaleY', 'rotate', 'opacity'] as const) {
       const c = channels[key];
       if (c === undefined) continue;
-      if (!Number.isInteger(c) || c < 0 || c >= C) throw new RangeError(`@lama/motion: channel ${key} must be an integer in [0, ${C}) (got ${c})`);
+      if (!Number.isInteger(c) || c < 0 || c >= C) throw new RangeError(`@alpacka/motion: channel ${key} must be an integer in [0, ${C}) (got ${c})`);
       used.push(c);
     }
     const last = new Float64Array(n * used.length).fill(NaN);

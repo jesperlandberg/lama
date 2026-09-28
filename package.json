@@ -1,7 +1,7 @@
 {
   "name": "lama",
   "private": true,
-  "description": "Jesper Landberg's front-end packages — one repo, independent packages under @lama.",
+  "description": "Jesper Landberg's front-end packages — one repo, independent packages, on npm under @alpacka.",
   "license": "MIT",
   "type": "module",
   "workspaces": [

@@ -1,4 +1,4 @@
-# @lama/split
+# @alpacka/split
 
 Splits blocks of text into the lines the browser painted — and the words and
 characters in them — so each can move under its own mask, fade, or whatever the
@@ -8,7 +8,7 @@ block. `revert()` puts every original node back where it was — the nodes
 themselves, not a copy of the markup, so references into the block stay live.
 
 ```ts
-import { LamaSplit } from '@lama/split'
+import { LamaSplit } from '@alpacka/split'
 
 const split = new LamaSplit('.copy', { type: 'lines, words', mask: 'lines', pad: '.5em' })
 

@@ -66,7 +66,7 @@ run(`npm version ${bump} --no-git-tag-version`, dir)
 const pkg = JSON.parse(readFileSync(`${dir}/package.json`, 'utf8'))
 const { version } = pkg
 const tag = `${name}-v${version}`
-/* npm pack's own name for a scoped package: @lama/split → lama-split-0.1.1.tgz */
+/* npm pack's own name for a scoped package: @alpacka/split → alpacka-split-0.1.1.tgz */
 const file = `${pkg.name.replace(/^@/, '').replace('/', '-')}-${version}.tgz`
 const url = `https://github.com/jesperlandberg/lama/releases/download/${tag}/${file}`
 

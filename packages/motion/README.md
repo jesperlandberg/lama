@@ -1,4 +1,4 @@
-# @lama/motion
+# @alpacka/motion
 
 Spring motion for the DOM and for WebGL/WebGPU, built on one idea: a spring is
 **state** — `{ value, velocity, target }` — not a timeline.
@@ -33,22 +33,22 @@ TypeScript, ES modules, no dependencies.
 ## Install
 
 ```sh
-npm i @lama/motion
+npm i @alpacka/motion
 ```
 
 | import | |
 | --- | --- |
-| `@lama/motion` | everything below |
-| `@lama/motion/core` | `Spring`, `SpringSet`, `Ticker`, `VelocityTracker`, `projectFling`, and the step functions underneath — no DOM |
-| `@lama/motion/dom` | `DomAdapter`, `bindStates`, `bindHover`, `bindPress`, `bindPointer`, `bindDrag` |
-| `@lama/motion/flip` | `Flip`, `applyFlipToDom`, `Flight`, and the rect helpers |
+| `@alpacka/motion` | everything below |
+| `@alpacka/motion/core` | `Spring`, `SpringSet`, `Ticker`, `VelocityTracker`, `projectFling`, and the step functions underneath — no DOM |
+| `@alpacka/motion/dom` | `DomAdapter`, `bindStates`, `bindHover`, `bindPress`, `bindPointer`, `bindDrag` |
+| `@alpacka/motion/flip` | `Flip`, `applyFlipToDom`, `Flight`, and the rect helpers |
 
 Every version is also attached as a tarball to its GitHub release, tagged
 `motion-vX.Y.Z` on [jesperlandberg/lama](https://github.com/jesperlandberg/lama/releases),
 so a project can depend on the tarball's URL instead:
 
 ```json
-"@lama/motion": "https://github.com/jesperlandberg/lama/releases/download/motion-vX.Y.Z/lama-motion-X.Y.Z.tgz"
+"@alpacka/motion": "https://github.com/jesperlandberg/lama/releases/download/motion-vX.Y.Z/alpacka-motion-X.Y.Z.tgz"
 ```
 
 ## Quick start
@@ -56,8 +56,8 @@ so a project can depend on the tarball's URL instead:
 A card that grows on hover and gives on press:
 
 ```ts
-import { Spring, Ticker } from '@lama/motion/core';
-import { DomAdapter, bindStates } from '@lama/motion/dom';
+import { Spring, Ticker } from '@alpacka/motion/core';
+import { DomAdapter, bindStates } from '@alpacka/motion/dom';
 
 const ticker = new Ticker().start();   // runs its own requestAnimationFrame loop
 const dom = new DomAdapter(ticker);    // the write side
@@ -79,7 +79,7 @@ where it is, carrying its speed, instead of starting again from 1.
 ### Spring
 
 ```ts
-import { Spring } from '@lama/motion/core';
+import { Spring } from '@alpacka/motion/core';
 
 const x = new Spring(0, { response: 0.4, dampingRatio: 0.85 });
 
@@ -140,7 +140,7 @@ N springs × C channels, stored in `Float32Array`s. Every spring in a set shares
 its params and rest thresholds; use several sets for several feels.
 
 ```ts
-import { SpringSet } from '@lama/motion/core';
+import { SpringSet } from '@alpacka/motion/core';
 
 const cells = new SpringSet(200, 3, { response: 0.5, bounce: 0.2 }); // 200 × (x, y, scale)
 
@@ -167,7 +167,7 @@ A frame's layout reads — FLIP measures in the step phase — therefore come
 before its style writes, and the two never interleave.
 
 ```ts
-import { Ticker } from '@lama/motion/core';
+import { Ticker } from '@alpacka/motion/core';
 
 const ticker = new Ticker();                  // { maxDt: 1/20, fixedDt }
 const offStep = ticker.add(spring);           // anything with step(dt): Spring, SpringSet, Flip, your own
@@ -196,7 +196,7 @@ gsap's ticker, whose `deltaTime` is in milliseconds:
 
 ```ts
 import { gsap } from 'gsap';
-import { Ticker } from '@lama/motion/core';
+import { Ticker } from '@alpacka/motion/core';
 
 const ticker = new Ticker();
 gsap.ticker.add((_time, deltaTime) => ticker.tick(deltaTime / 1000));
@@ -224,8 +224,8 @@ already running. It never calls `start()`:
 ```ts
 // plugins/motion.client.ts
 import { gsap } from 'gsap';
-import { Ticker } from '@lama/motion/core';
-import { DomAdapter } from '@lama/motion/dom';
+import { Ticker } from '@alpacka/motion/core';
+import { DomAdapter } from '@alpacka/motion/dom';
 
 export default defineNuxtPlugin(() => {
   const ticker = new Ticker();
@@ -237,8 +237,8 @@ export default defineNuxtPlugin(() => {
 
 ```ts
 // in a component's <script setup>
-import { Spring } from '@lama/motion/core';
-import { bindStates } from '@lama/motion/dom';
+import { Spring } from '@alpacka/motion/core';
+import { bindStates } from '@alpacka/motion/dom';
 
 const { $ticker, $dom } = useNuxtApp();
 const card = ref<HTMLElement>();
@@ -260,7 +260,7 @@ A plain Vue plugin does the same through `app.provide`:
 ```ts
 import type { App, InjectionKey } from 'vue';
 import { gsap } from 'gsap';
-import { Ticker } from '@lama/motion/core';
+import { Ticker } from '@alpacka/motion/core';
 
 export const TickerKey: InjectionKey<Ticker> = Symbol('ticker');
 
@@ -281,7 +281,7 @@ package there is harmless all the same: no module touches `window` or
 
 ## DOM
 
-`@lama/motion/dom`
+`@alpacka/motion/dom`
 
 ### DomAdapter
 
@@ -292,7 +292,7 @@ sleeping spring, a spring can wake and settle inside one tick, and both still
 reach the element. A settled page costs no style writes.
 
 ```ts
-import { DomAdapter } from '@lama/motion/dom';
+import { DomAdapter } from '@alpacka/motion/dom';
 
 const dom = new DomAdapter(ticker);
 
@@ -327,7 +327,7 @@ same element is not composed with.
 ### Hover and press
 
 ```ts
-import { bindHover, bindPointer, bindPress, bindStates } from '@lama/motion/dom';
+import { bindHover, bindPointer, bindPress, bindStates } from '@alpacka/motion/dom';
 
 bindStates(el, scale, { rest: 1, hover: 1.05, press: 0.95 });  // press wins over hover, hover over rest
 bindHover(el, lift, 0, 1);
@@ -345,7 +345,7 @@ lifts. Each call returns an unbind function.
 ### Drag
 
 ```ts
-import { bindDrag } from '@lama/motion/dom';
+import { bindDrag } from '@alpacka/motion/dom';
 
 bindDrag(el, {
   x, y,
@@ -399,7 +399,7 @@ drag, so a tap still clicks the child under the finger.
 Snapping to slots is a `release` that rounds the projected landing:
 
 ```ts
-import { projectFling } from '@lama/motion/core';
+import { projectFling } from '@alpacka/motion/core';
 
 const slot = 320;                   // px per card
 const minX = -(count - 1) * slot;
@@ -416,7 +416,7 @@ bindDrag(strip, {
 
 ## FLIP
 
-`@lama/motion/flip`
+`@alpacka/motion/flip`
 
 A registry of elements by id. A flight is five springs — left, top, width,
 height, corner radius — toward a destination **re-read from the live element
@@ -432,8 +432,8 @@ every frame**. Nothing is snapshotted and nothing is cancelled:
   down — freezes where it last stood, and the flight glides to a stop there.
 
 ```ts
-import { Ticker } from '@lama/motion/core';
-import { Flip, applyFlipToDom } from '@lama/motion/flip';
+import { Ticker } from '@alpacka/motion/core';
+import { Flip, applyFlipToDom } from '@alpacka/motion/flip';
 
 const ticker = new Ticker().start();
 const flip = new Flip();
@@ -684,8 +684,8 @@ pinch and rotate are not here.
 From the root of [jesperlandberg/lama](https://github.com/jesperlandberg/lama):
 
 ```sh
-npm test -w @lama/motion        # vitest: the closed-form step, the bindings, the registry
-npm run build -w @lama/motion   # dist/ via tsc, with declarations
+npm test -w @alpacka/motion        # vitest: the closed-form step, the bindings, the registry
+npm run build -w @alpacka/motion   # dist/ via tsc, with declarations
 ```
 
 ## License

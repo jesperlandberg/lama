@@ -1,5 +1,5 @@
 /*
- * @lama/split — the lines the browser painted, and the words and characters
+ * @alpacka/split — the lines the browser painted, and the words and characters
  * in them, one wrapper each.
  *
  * A block of text in, one `div` per line out — and, asked for, a `span` per

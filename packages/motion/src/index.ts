@@ -1,5 +1,5 @@
 /*
- * @lama/motion — retargetable, velocity-preserving spring motion for the
+ * @alpacka/motion — retargetable, velocity-preserving spring motion for the
  * DOM and for WebGL/WebGPU.
  *
  * A spring here is state, not a timeline: `{ value, velocity, target }`. An

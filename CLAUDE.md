@@ -1,11 +1,11 @@
 # lama
 
 Jesper Landberg's front-end packages, one repo, published one at a time under
-`@lama`. Today: `packages/split` (`@lama/split`) and `packages/motion` (`@lama/motion`,
-moved in from `~/Documents/web/motion` on 2026-09-05, unreleased), and
-`packages/smooth-stick` (`@alpacka/smooth-stick`, 2026-09-28, the first under the
-studio's npm scope, see below). An umbrella (`lama.create.split()`, `@lama/domgl`)
-is an idea to discuss, not built.
+`@alpacka`. Today: `packages/split` (`@alpacka/split`), `packages/motion`
+(`@alpacka/motion`, moved in from `~/Documents/web/motion` on 2026-09-05) and
+`packages/smooth-stick` (`@alpacka/smooth-stick`, 2026-09-28). split and motion
+were `@lama/…` until 2026-09-28, see below. An umbrella (`lama.create.split()`,
+`@lama/domgl`) is an idea to discuss, not built.
 
 ## Working here
 
@@ -17,17 +17,21 @@ is an idea to discuss, not built.
   tarball. Clean tree and `gh` signed in required. `--npm` also publishes that
   tarball to npmjs before anything is committed; it needs `npm login`, and a
   refused publish undoes the bump.
-- Consumers install from the release tarball URL
-  (`releases/download/split-vX.Y.Z/lama-split-X.Y.Z.tgz`) — npm cannot install a
-  subfolder of a git repo, and nothing is on npmjs yet. `@lama` there is not free:
-  it is the personal scope of an existing npm account named `lama` (checked
-  2026-09-24: `registry.npmjs.org/-/org/lama/user` answers `{"lama":"owner"}`, no
-  packages), so publishing under it needs that account, or another scope.
-  `@alpacka` is that other scope: the studio's, free when checked on 2026-09-28,
-  and smooth-stick is the first package under it. motion and split can move
-  there when they go to npm.
-  Ascension (`~/Documents/web/ascension`) is the first consumer, lines only,
-  through `app/transitions/lines.ts`.
+- The npm scope is `@alpacka`, the npm account `alpacka`'s own. It has 2FA on, so
+  a `--npm` release stops at the publish for an approval in the browser. `@lama`
+  on npm is the personal scope of someone else's account named `lama` (checked
+  2026-09-24: `registry.npmjs.org/-/org/lama/user` answers `{"lama":"owner"}`), so
+  split and motion were renamed from `@lama/…` to `@alpacka/…` on 2026-09-28; the
+  class names (`LamaSplit`) stayed. smooth-stick is on npm; split and motion go
+  there with their next `--npm` release.
+- Consumers install from npm, or from a release's tarball URL
+  (`releases/download/<pkg>-vX.Y.Z/alpacka-<pkg>-X.Y.Z.tgz`) — npm cannot install
+  a subfolder of a git repo. Releases from before the rename (`motion-v0.1.0`,
+  `split-v0.2.0`) carry `lama-<pkg>` tarballs named `@lama/…`, and the projects on
+  them (goldfront, griflan, op-26, ascension, the jesper-folio sites) keep working
+  until they move to a newer release, which renames the dependency and its
+  imports. Ascension (`~/Documents/web/ascension`) is split's first consumer,
+  lines only, through `app/transitions/lines.ts`.
 - `npm test` runs vitest in every package that has tests (motion and
   smooth-stick do; split is verified against real pages, see below).
 - Tabs for indentation, shown four wide; no semicolons, single quotes. motion's
@@ -35,7 +39,7 @@ is an idea to discuss, not built.
 - Comments explain the why, in prose. Read a package's `src/index.ts` header before
   changing it: it states what is handled, what is left alone and why.
 
-## @lama/split — the bar
+## @alpacka/split — the bar
 
 - The split must not show: every glyph on the same pixel before and after, block
   heights identical, every original node restored by identity on revert. Verified
@@ -51,11 +55,11 @@ is an idea to discuss, not built.
   alias, no queued/batched static call (would be async; add only when a caller
   shape needs it). `type` and `mask` take `'lines, words, chars'` strings or arrays;
   masks are opt-in; words/chars always sit inside line blocks.
-- Open: publish to npmjs under `@lama`; a canvas measurer behind `Reader.run`
+- Open: publish to npm (`--npm`); a canvas measurer behind `Reader.run`
   (Pretext-style predicted breaks — only with a DOM-vs-canvas harness);
   `hyphens: auto`, drop caps, floats, RTL/vertical (deliberately out).
 
-## @lama/motion — the bar
+## @alpacka/motion — the bar
 
 - A spring is state (`value`, `velocity`, `target`); an interaction only calls
   `setTarget` / `addVelocity` / `snap`. Nothing is cancelled, no tween exists.
@@ -79,7 +83,7 @@ is an idea to discuss, not built.
   the bounds. Every way out of a drag hands `dragParams` back.
 - Numbers from a caller are checked at the setters and the params, never in the
   step — a NaN in a spring is permanent.
-- Verified by `npm test -w @lama/motion` (50 tests: dt-independence, retarget
+- Verified by `npm test -w @alpacka/motion` (50 tests: dt-independence, retarget
   continuity, a chaos storm that must still come to rest, the write rule,
   bindings, hold → claim, scroll, radius). The old playground (layouts,
   hold → claim, chaos, drag → fling, a WebGPU glass carousel) lives on in
@@ -105,9 +109,9 @@ is an idea to discuss, not built.
   scroll is reset under it while it is still on screen (a transition); a
   `destroy()` after it keeps that pose.
 - Verified by `npm test -w @alpacka/smooth-stick` (the curve: windows, edge
-  slopes, continuity, monotonic, mirror, shrink, lead, eases) and on goldfront,
-  whose `app/lib/smooth-stick.ts` is the vendored first copy (the Text1 client
-  rail, the ideas post credits), scrolled in steps: sticky goes from scroll
+  slopes, continuity, monotonic, mirror, shrink, lead, eases) and on goldfront
+  (the Text1 client rail, the ideas post credits; vendored there first, on the
+  npm package since 0.1.0), scrolled in steps: sticky goes from scroll
   speed to still in one step, the corrected element 0.95 → 0.49 at sticky's
   corner → 0.01 and onto the line to the pixel; the main-thread engine gives
   the same numbers. The first demo, plain sticky beside it in one layout, is

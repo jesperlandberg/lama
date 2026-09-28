@@ -1,23 +1,32 @@
 # lama
 
 Front-end packages by [Jesper Landberg](https://github.com/jesperlandberg): one
-repo, independent packages, each published on its own under `@lama` (and
-`@alpacka` on npm, where `@lama` is taken).
+repo, each package versioned and released on its own, and published on npm under
+`@alpacka`.
 
 | package | what |
 | --- | --- |
-| [`@lama/split`](packages/split) | splits blocks of text into the lines the browser painted — every block measured before any is cut, every original node put back on revert |
-| [`@lama/motion`](packages/motion) | retargetable, velocity-preserving spring motion — a spring is state, interactions only set targets; a DOM adapter, hover/press/drag bindings, and a FLIP registry whose flights re-read their destination every frame |
+| [`@alpacka/split`](packages/split) | splits blocks of text into the lines the browser painted — every block measured before any is cut, every original node put back on revert |
+| [`@alpacka/motion`](packages/motion) | retargetable, velocity-preserving spring motion — a spring is state, interactions only set targets; a DOM adapter, hover/press/drag bindings, and a FLIP registry whose flights re-read their destination every frame |
 | [`@alpacka/smooth-stick`](packages/smooth-stick) | `position: sticky` with its corners rounded off — the element slows into its line and eases away from it, as a scroll-driven animation beside sticky |
 
 ## Install
 
-Releases are tagged per package (`split-v0.1.0`) and carry the package tarball,
-so a project can depend on one straight from GitHub without an npm publish:
+```sh
+npm i @alpacka/smooth-stick
+```
+
+smooth-stick is on npm today; split and motion follow with their next release.
+Every release is also tagged per package (`smooth-stick-v0.1.0`) and carries the
+package tarball, so a project can depend on one straight from GitHub:
 
 ```json
-"@lama/split": "https://github.com/jesperlandberg/lama/releases/download/split-v0.1.0/lama-split-0.1.0.tgz"
+"@alpacka/smooth-stick": "https://github.com/jesperlandberg/lama/releases/download/smooth-stick-v0.1.0/alpacka-smooth-stick-0.1.0.tgz"
 ```
+
+Releases from before the move to `@alpacka` (`motion-v0.1.0`, `split-v0.2.0`)
+carry `@lama/…` tarballs. Projects on them keep working, and take the new name
+when they move to a newer release.
 
 ## Develop
 
