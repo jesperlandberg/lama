@@ -1,6 +1,6 @@
 {
 	"name": "@alpacka/smooth-stick",
-	"version": "0.0.0",
+	"version": "0.1.0",
 	"description": "position: sticky with its corners rounded off — the element slows into its line and eases away from it, as a scroll-driven animation beside sticky.",
 	"keywords": [
 		"sticky",
