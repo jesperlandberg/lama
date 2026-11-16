@@ -1,6 +1,6 @@
 {
 	"name": "@alpacka/sticky",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "position: sticky that eases in and out. The browser still pins the element; this adds one offset on top, as a scroll-driven animation.",
 	"keywords": [
 		"sticky",
