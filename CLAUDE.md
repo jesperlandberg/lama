@@ -148,6 +148,14 @@ until it was renamed on 2026-11-16). split and motion were `@lama/…` until
   updated at 60Hz on iOS after. Do not flip the default without a phone in
   hand: the demo's `?touch` forces it on and reads out the engine, the
   animation builds and the resizes.
+- Checked in Chrome, WebKit and Firefox before 0.2.1 (Playwright, a production
+  build of the demo), which found two things Chrome alone never would. Firefox
+  has scroll-driven animations and no Typed OM, so `CSS.px` threw and the
+  package died on the compositor path: the range offsets are strings now
+  (`'exit-crossing 120px'`), which all three take, negatives included. And a
+  module script can run before its stylesheet has loaded (WebKit did), so
+  `all()` found no rules and no stickies: both `all()` and a single stick look
+  once more on `load`. Chrome is not a test of this package.
 - The main-thread engine is on the ticker only while the parent is near the
   viewport (an IntersectionObserver, a span of margin). It starts subscribed
   and written once, so a rebuild inside a window shows no frame of plain

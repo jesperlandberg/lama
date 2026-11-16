@@ -180,11 +180,10 @@ export const curve = ({ travel, span, ease = 'power2', lead = Infinity }: CurveO
 
 /* not in TypeScript's DOM lib yet */
 type ViewTimelineCtor = new (options: { subject: Element; axis: 'block' }) => AnimationTimeline
-type RangeOffset = { rangeName: string; offset: CSSUnitValue }
 type RangeOptions = KeyframeAnimationOptions & {
 	timeline: AnimationTimeline
-	rangeStart: RangeOffset
-	rangeEnd: RangeOffset
+	rangeStart: string
+	rangeEnd: string
 }
 
 const ViewTimeline =
@@ -392,8 +391,10 @@ const one = (
 		if (timeline) {
 			const options: RangeOptions = {
 				timeline,
-				rangeStart: { rangeName: 'exit-crossing', offset: CSS.px(engage + into[0]) },
-				rangeEnd: { rangeName: 'exit-crossing', offset: CSS.px(engage + outof[1]) },
+				/* as strings: the object form wants a CSSUnitValue, and Firefox has
+				   scroll-driven animations without the Typed OM to make one */
+				rangeStart: `exit-crossing ${engage + into[0]}px`,
+				rangeEnd: `exit-crossing ${engage + outof[1]}px`,
 				fill: 'none',
 			}
 
@@ -472,6 +473,10 @@ const one = (
 	gate.addEventListener('change', refresh)
 	reduced.addEventListener('change', refresh)
 
+	/* made before its stylesheet applied, the element is not sticky yet and
+	   there is nothing to measure: once more when the page has loaded */
+	if (document.readyState !== 'complete') addEventListener('load', refresh, { once: true })
+
 	refresh()
 
 	return {
@@ -485,6 +490,7 @@ const one = (
 		freeze,
 		destroy() {
 			ro.disconnect()
+			removeEventListener('load', refresh)
 			removeEventListener('resize', refresh)
 			gate.removeEventListener('change', refresh)
 			reduced.removeEventListener('change', refresh)
@@ -625,6 +631,15 @@ function all(first?: string | StickyOptions, second: StickyOptions = {}): Sticky
 
 	scan()
 
+	/*
+	 * Called before the page's stylesheets are in, the search has no rules to
+	 * read and finds nothing. That is not a rare order: a module script can
+	 * run ahead of a stylesheet that is still loading, and WebKit was seen to
+	 * do it. So it looks once more when the page has loaded.
+	 */
+	const loaded = () => scan()
+	if (document.readyState !== 'complete') addEventListener('load', loaded, { once: true })
+
 	return {
 		sticks,
 		scan,
@@ -634,6 +649,7 @@ function all(first?: string | StickyOptions, second: StickyOptions = {}): Sticky
 			sticks.forEach((stick) => stick.freeze())
 		},
 		destroy() {
+			removeEventListener('load', loaded)
 			sticks.forEach((stick) => stick.destroy())
 			sticks.clear()
 		},
