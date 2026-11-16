@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import copy from '../../../skills/sticky/sticky.ts?raw'
+import manifest from '../package.json?raw'
+import source from './index.ts?raw'
 import { curve, eases, keyframes, stickySelectors } from './index.js'
 
 /* a central difference, well inside a window */
@@ -219,5 +222,18 @@ describe('stickySelectors', () => {
 
 	it('has nothing to say about a page with no sheets', () => {
 		expect(stickySelectors([])).toEqual({ selectors: [], unread: 0 })
+	})
+})
+
+/* The sticky skill hands an agent this file to copy into a project. It is
+   written by scripts/skill.mjs and must be this source, whole, under this
+   version: a copy that has drifted hands out old bugs. */
+describe('the skill\'s copy', () => {
+	it('is this source, unchanged, under this version', () => {
+		const { name, version } = JSON.parse(manifest) as { name: string; version: string }
+		const [banner, ...rest] = copy.split('\n')
+
+		expect(banner).toContain(`${name} ${version}`)
+		expect(rest.join('\n')).toBe(source)
 	})
 })

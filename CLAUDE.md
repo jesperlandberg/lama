@@ -1,7 +1,10 @@
-# lama
+# alpacka
 
 Jesper Landberg's front-end packages, one repo, published one at a time under
-`@alpacka`. Today: `packages/split` (`@alpacka/split`), `packages/motion`
+`@alpacka`. The GitHub repo was `jesperlandberg/lama` until 2026-11-16 and is
+`jesperlandberg/alpacka` since, so the skills install as
+`jesperlandberg/alpacka@<name>`; GitHub redirects the old address, and the
+local checkout is still the folder `lama-lib`. Today: `packages/split` (`@alpacka/split`), `packages/motion`
 (`@alpacka/motion`, moved in from `~/Documents/web/motion` on 2026-09-05) and
 `packages/sticky` (`@alpacka/sticky`; `@alpacka/smooth-stick` from 2026-09-28
 until it was renamed on 2026-11-16). split and motion were `@lama/…` until
@@ -91,6 +94,25 @@ until it was renamed on 2026-11-16). split and motion were `@lama/…` until
   `~/Documents/web/motion/playground`, outside the repo. A consumer,
   `~/Documents/web/motion-demo`, still points at `file:../motion` under the old
   name `@domgl/motion`.
+
+## Skills
+
+- `skills/<name>/` is a skill for coding agents, installed with
+  `npx skills add jesperlandberg/alpacka@<name>` (the skills CLI takes every
+  `skills/*/SKILL.md` in a repo; the whole folder is installed). sticky is the
+  first, added 2026-11-16, and the one the demo site leads with: for a package
+  this small the code is the lesser part, and what a project lacks is which
+  elements suit it, the wiring and the traps.
+- A skill carries its package's source as `skills/<name>/<name>.ts`, with the
+  version on its first line. `node scripts/skill.mjs <name>` writes it, the
+  release runs that after the bump and commits it, and the package's tests
+  fail when the copy and the source differ. Never edit the copy.
+- The frontmatter is YAML and the CLI skips a skill it cannot parse, without
+  an error anyone will see: a description with `position: sticky` in it was a
+  nested mapping and the skill was simply not found. Quote the description,
+  and run `npx skills add <path to this repo> --list` after touching it.
+- Write a skill as instructions with a check at the end (which elements, the
+  preconditions, the wiring, how to verify), not as a description of the code.
 
 ## @alpacka/sticky — the bar
 

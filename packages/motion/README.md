@@ -44,11 +44,11 @@ npm i @alpacka/motion
 | `@alpacka/motion/flip` | `Flip`, `applyFlipToDom`, `Flight`, and the rect helpers |
 
 Every version is also attached as a tarball to its GitHub release, tagged
-`motion-vX.Y.Z` on [jesperlandberg/lama](https://github.com/jesperlandberg/lama/releases),
+`motion-vX.Y.Z` on [jesperlandberg/alpacka](https://github.com/jesperlandberg/alpacka/releases),
 so a project can depend on the tarball's URL instead:
 
 ```json
-"@alpacka/motion": "https://github.com/jesperlandberg/lama/releases/download/motion-vX.Y.Z/alpacka-motion-X.Y.Z.tgz"
+"@alpacka/motion": "https://github.com/jesperlandberg/alpacka/releases/download/motion-vX.Y.Z/alpacka-motion-X.Y.Z.tgz"
 ```
 
 ## Quick start
@@ -681,7 +681,7 @@ pinch and rotate are not here.
 
 ## Develop
 
-From the root of [jesperlandberg/lama](https://github.com/jesperlandberg/lama):
+From the root of [jesperlandberg/alpacka](https://github.com/jesperlandberg/alpacka):
 
 ```sh
 npm test -w @alpacka/motion        # vitest: the closed-form step, the bindings, the registry

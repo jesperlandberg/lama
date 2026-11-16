@@ -17,12 +17,27 @@ Up to 0.1.0 this package was `@alpacka/smooth-stick`. `smoothStick` is now
 
 ## Install
 
+With an agent, as a skill. The whole implementation is one file inside the
+skill. Your agent copies it into the project and wires it up, with nothing
+added to your dependencies:
+
+```sh
+npx skills add jesperlandberg/alpacka@sticky
+```
+
+Then ask for it: "ease the sticky sidebar", "make my stickies ease in and out".
+
+Or as a package:
+
 ```sh
 npm i @alpacka/sticky
 ```
 
+Both are the same code. The skill's copy is written from this source at each
+release and checked against it by the tests.
+
 Each version is also attached as a tarball to its GitHub release, tagged
-`sticky-vX.Y.Z` on [jesperlandberg/lama](https://github.com/jesperlandberg/lama/releases).
+`sticky-vX.Y.Z` on [jesperlandberg/alpacka](https://github.com/jesperlandberg/alpacka/releases).
 
 ## Use
 

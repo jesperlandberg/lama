@@ -62,11 +62,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jesperlandberg/lama.git",
+    "url": "git+https://github.com/jesperlandberg/alpacka.git",
     "directory": "packages/motion"
   },
-  "homepage": "https://github.com/jesperlandberg/lama/tree/main/packages/motion#readme",
-  "bugs": "https://github.com/jesperlandberg/lama/issues",
+  "homepage": "https://github.com/jesperlandberg/alpacka/tree/main/packages/motion#readme",
+  "bugs": "https://github.com/jesperlandberg/alpacka/issues",
   "publishConfig": {
     "access": "public"
   }

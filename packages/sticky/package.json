@@ -43,11 +43,11 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/jesperlandberg/lama.git",
+		"url": "git+https://github.com/jesperlandberg/alpacka.git",
 		"directory": "packages/sticky"
 	},
-	"homepage": "https://github.com/jesperlandberg/lama/tree/main/packages/sticky#readme",
-	"bugs": "https://github.com/jesperlandberg/lama/issues",
+	"homepage": "https://github.com/jesperlandberg/alpacka/tree/main/packages/sticky#readme",
+	"bugs": "https://github.com/jesperlandberg/alpacka/issues",
 	"publishConfig": {
 		"access": "public"
 	}

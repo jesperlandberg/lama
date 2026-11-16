@@ -1,4 +1,4 @@
-# lama
+# alpacka
 
 Front-end packages by [Jesper Landberg](https://github.com/jesperlandberg): one
 repo, each package versioned and released on its own, and published on npm under
@@ -9,6 +9,19 @@ repo, each package versioned and released on its own, and published on npm under
 | [`@alpacka/split`](packages/split) | splits blocks of text into the lines the browser painted — every block measured before any is cut, every original node put back on revert |
 | [`@alpacka/motion`](packages/motion) | retargetable, velocity-preserving spring motion — a spring is state, interactions only set targets; a DOM adapter, hover/press/drag bindings, and a FLIP registry whose flights re-read their destination every frame |
 | [`@alpacka/sticky`](packages/sticky) | `position: sticky` that eases in and out. The browser still pins the element; this adds one offset on top, as a scroll-driven animation |
+
+## Skills
+
+A package here can also come as a skill: instructions for a coding agent, with
+the package's own source inside as one file to copy into a project.
+
+```sh
+npx skills add jesperlandberg/alpacka@sticky
+```
+
+| skill | what |
+| --- | --- |
+| [`sticky`](skills/sticky) | eases `position: sticky` in and out. Which elements suit it, how to wire it into Vue, React or a smooth scroll, what breaks it, and how to check it works |
 
 ## Install
 
@@ -21,7 +34,7 @@ Every release is also tagged per package (`sticky-v0.2.0`) and carries the
 package tarball, so a project can depend on one straight from GitHub:
 
 ```json
-"@alpacka/sticky": "https://github.com/jesperlandberg/lama/releases/download/sticky-v0.2.0/alpacka-sticky-0.2.0.tgz"
+"@alpacka/sticky": "https://github.com/jesperlandberg/alpacka/releases/download/sticky-v0.2.0/alpacka-sticky-0.2.0.tgz"
 ```
 
 sticky was `@alpacka/smooth-stick` up to 0.1.0, and that release keeps its old

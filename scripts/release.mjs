@@ -14,7 +14,7 @@
  * `npm_config_otp=123456 npm run release -- motion --npm` hands it over up front.
  */
 import { execSync } from 'node:child_process'
-import { mkdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 
 const args = process.argv.slice(2)
 const flags = args.filter((a) => a.startsWith('--'))
@@ -63,12 +63,16 @@ run('npm test --if-present', dir)
 
 run(`npm version ${bump} --no-git-tag-version`, dir)
 
+/* a package with a skill ships its source inside it, under the new version */
+const skill = existsSync(`skills/${name}`) ? `skills/${name}` : ''
+if (skill) run(`node scripts/skill.mjs ${name}`)
+
 const pkg = JSON.parse(readFileSync(`${dir}/package.json`, 'utf8'))
 const { version } = pkg
 const tag = `${name}-v${version}`
 /* npm pack's own name for a scoped package: @alpacka/split → alpacka-split-0.1.1.tgz */
 const file = `${pkg.name.replace(/^@/, '').replace('/', '-')}-${version}.tgz`
-const url = `https://github.com/jesperlandberg/lama/releases/download/${tag}/${file}`
+const url = `https://github.com/jesperlandberg/alpacka/releases/download/${tag}/${file}`
 
 mkdirSync('.release', { recursive: true })
 run('npm run build', dir)
@@ -84,13 +88,13 @@ if (toNpm) {
 	try {
 		run(`npm publish .release/${file} --access public`)
 	} catch {
-		run(`git checkout -- ${dir}/package.json package-lock.json`)
+		run(`git checkout -- ${dir}/package.json package-lock.json ${skill}`)
 		console.error(`release: npm publish failed — ${pkg.name} is back at its previous version, and nothing was committed, tagged or pushed`)
 		process.exit(1)
 	}
 }
 
-run(`git add ${dir}/package.json package-lock.json`)
+run(`git add ${dir}/package.json package-lock.json ${skill}`)
 run(`git commit -q -m "release(${name}): ${version}"`)
 run(`git tag -a ${tag} -m "${pkg.name} ${version}"`)
 run('git push -q --follow-tags')
