@@ -3,8 +3,9 @@
 Jesper Landberg's front-end packages, one repo, published one at a time under
 `@alpacka`. Today: `packages/split` (`@alpacka/split`), `packages/motion`
 (`@alpacka/motion`, moved in from `~/Documents/web/motion` on 2026-09-05) and
-`packages/smooth-stick` (`@alpacka/smooth-stick`, 2026-09-28). split and motion
-were `@lama/…` until 2026-09-28, see below. An umbrella (`lama.create.split()`,
+`packages/sticky` (`@alpacka/sticky`; `@alpacka/smooth-stick` from 2026-09-28
+until it was renamed on 2026-11-16). split and motion were `@lama/…` until
+2026-09-28, see below. An umbrella (`lama.create.split()`,
 `@lama/domgl`) is an idea to discuss, not built.
 
 ## Working here
@@ -22,7 +23,7 @@ were `@lama/…` until 2026-09-28, see below. An umbrella (`lama.create.split()`
   on npm is the personal scope of someone else's account named `lama` (checked
   2026-09-24: `registry.npmjs.org/-/org/lama/user` answers `{"lama":"owner"}`), so
   split and motion were renamed from `@lama/…` to `@alpacka/…` on 2026-09-28; the
-  class names (`LamaSplit`) stayed. smooth-stick is on npm; split and motion go
+  class names (`LamaSplit`) stayed. sticky is on npm; split and motion go
   there with their next `--npm` release.
 - Consumers install from npm, or from a release's tarball URL
   (`releases/download/<pkg>-vX.Y.Z/alpacka-<pkg>-X.Y.Z.tgz`) — npm cannot install
@@ -33,7 +34,7 @@ were `@lama/…` until 2026-09-28, see below. An umbrella (`lama.create.split()`
   imports. Ascension (`~/Documents/web/ascension`) is split's first consumer,
   lines only, through `app/transitions/lines.ts`.
 - `npm test` runs vitest in every package that has tests (motion and
-  smooth-stick do; split is verified against real pages, see below).
+  sticky do; split is verified against real pages, see below).
 - Tabs for indentation, shown four wide; no semicolons, single quotes. motion's
   two spaces and semicolons came with it from its old repo.
 - Comments explain the why, in prose. Read a package's `src/index.ts` header before
@@ -91,7 +92,14 @@ were `@lama/…` until 2026-09-28, see below. An umbrella (`lama.create.split()`
   `~/Documents/web/motion-demo`, still points at `file:../motion` under the old
   name `@domgl/motion`.
 
-## @alpacka/smooth-stick — the bar
+## @alpacka/sticky — the bar
+
+- Renamed from `@alpacka/smooth-stick` on 2026-11-16, before 0.2.0: `smoothStick`
+  is `sticky`, the types are `Sticky`, `StickyOptions`, `StickyAll`. 0.1.0 stays
+  on npm under the old name with tag `smooth-stick-v0.1.0`; deprecate it there
+  (`npm deprecate @alpacka/smooth-stick "renamed to @alpacka/sticky"`) once the
+  new name has a release. goldfront, chiraq, griflan-ai, op-26 and alpacka are
+  on the old name at 0.1.0, each with its own `useSmoothStick.ts`.
 
 - Sticky pins; the correction only rounds its two corners, and outside its two
   windows it is exactly zero. So anything that stops it running (touch by
@@ -108,13 +116,13 @@ were `@lama/…` until 2026-09-28, see below. An umbrella (`lama.create.split()`
 - `freeze()` commits the pose inline and drops the animation, for a page whose
   scroll is reset under it while it is still on screen (a transition); a
   `destroy()` after it keeps that pose.
-- `smoothStick.all()` finds stickies from the stylesheets' RULES (any rule that
+- `sticky.all()` finds stickies from the stylesheets' RULES (any rule that
   declares `position: sticky`, at any depth), never from computed style: a
   sticky behind a breakpoint is not sticky at the other width, and a computed
   scan would miss it for good. An element taken on that is not sticky is an
   idle stick that wakes by itself. Computed style is only the fallback for a
   page with a sheet that cannot be read. It is opt-out
-  (`data-smooth-stick="off"`), which is only sound because `measure` refuses
+  (`data-sticky-ease="off"`), which is only sound because `measure` refuses
   what it cannot round: no `top`, zero travel, and a scroll container between
   the element and the root (`scrolls`). Keep that guard as wide as the search.
 - Six keyframes are exact: sticky's two corners and all four ends of the two
@@ -131,7 +139,7 @@ were `@lama/…` until 2026-09-28, see below. An umbrella (`lama.create.split()`
   viewport (an IntersectionObserver, a span of margin). It starts subscribed
   and written once, so a rebuild inside a window shows no frame of plain
   sticky. A caller's `ticker` is therefore subscribed more than once.
-- Verified by `npm test -w @alpacka/smooth-stick` (the curve: windows, edge
+- Verified by `npm test -w @alpacka/sticky` (the curve: windows, edge
   slopes, continuity, monotonic, mirror, shrink, lead, eases; the keyframes;
   the selector walk) and on goldfront
   (the Text1 client rail, the ideas post credits; vendored there first, on the

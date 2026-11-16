@@ -8,21 +8,24 @@ repo, each package versioned and released on its own, and published on npm under
 | --- | --- |
 | [`@alpacka/split`](packages/split) | splits blocks of text into the lines the browser painted — every block measured before any is cut, every original node put back on revert |
 | [`@alpacka/motion`](packages/motion) | retargetable, velocity-preserving spring motion — a spring is state, interactions only set targets; a DOM adapter, hover/press/drag bindings, and a FLIP registry whose flights re-read their destination every frame |
-| [`@alpacka/smooth-stick`](packages/smooth-stick) | `position: sticky` with its corners rounded off — the element slows into its line and eases away from it, as a scroll-driven animation beside sticky |
+| [`@alpacka/sticky`](packages/sticky) | `position: sticky` with its corners rounded off — the element slows into its line and eases away from it, as a scroll-driven animation beside sticky |
 
 ## Install
 
 ```sh
-npm i @alpacka/smooth-stick
+npm i @alpacka/sticky
 ```
 
-smooth-stick is on npm today; split and motion follow with their next release.
-Every release is also tagged per package (`smooth-stick-v0.1.0`) and carries the
+sticky is on npm today; split and motion follow with their next release.
+Every release is also tagged per package (`sticky-v0.2.0`) and carries the
 package tarball, so a project can depend on one straight from GitHub:
 
 ```json
-"@alpacka/smooth-stick": "https://github.com/jesperlandberg/lama/releases/download/smooth-stick-v0.1.0/alpacka-smooth-stick-0.1.0.tgz"
+"@alpacka/sticky": "https://github.com/jesperlandberg/lama/releases/download/sticky-v0.2.0/alpacka-sticky-0.2.0.tgz"
 ```
+
+sticky was `@alpacka/smooth-stick` up to 0.1.0, and that release keeps its old
+name and tag (`smooth-stick-v0.1.0`).
 
 Releases from before the move to `@alpacka` (`motion-v0.1.0`, `split-v0.2.0`)
 carry `@lama/…` tarballs. Projects on them keep working, and take the new name

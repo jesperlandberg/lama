@@ -1,5 +1,5 @@
 /*
- * @alpacka/smooth-stick — position: sticky with its two corners rounded off.
+ * @alpacka/sticky — position: sticky with its two corners rounded off.
  *
  * Sticky moves an element on a ramp. The offset it adds is
  * clamp(scroll − engage, 0, travel): nothing until the element reaches its
@@ -56,7 +56,7 @@
  *
  * ── All of them ──
  *
- * `smoothStick.all()` finds the page's stickies itself. It reads the
+ * `sticky.all()` finds the page's stickies itself. It reads the
  * stylesheets for the rules that declare `position: sticky` and takes
  * whatever their selectors match, rather than asking every element for its
  * computed style: a sticky that only exists from a breakpoint up is not
@@ -67,7 +67,7 @@
  * It is safe to run blind because of what the correction is. A sticky this
  * cannot round (a table header pinned inside its row, a site header with the
  * whole page to stick within, a `bottom` sticky) measures to nothing and stays
- * plain sticky. `data-smooth-stick="off"` leaves an element out, and the same
+ * plain sticky. `data-sticky-ease="off"` leaves an element out, and the same
  * attribute names an ease for one element.
  *
  * ── Left alone ──
@@ -190,7 +190,7 @@ const ViewTimeline =
 export const supported =
 	!!ViewTimeline && CSS.supports('(animation-timeline: view()) and (animation-range: entry)')
 
-export type SmoothStickOptions = {
+export type StickyOptions = {
 	/** scroll a landing, and a take-off, lasts, as a fraction of the viewport's height — 0.4 */
 	distance?: number
 	/** the landing curve: a name from `eases`, or any ease-out — 'power2' */
@@ -206,7 +206,7 @@ export type SmoothStickOptions = {
 	ticker?: (fn: () => void) => () => void
 }
 
-export type SmoothStick = {
+export type Sticky = {
 	readonly curve: Curve | null
 	/** what is applying the correction right now, if anything */
 	readonly engine: 'compositor' | 'main' | null
@@ -280,10 +280,10 @@ const scrolls = (from: Element) => {
  */
 const one = (
 	el: HTMLElement,
-	{ distance = 0.4, ease = 'power2', media = POINTER, engine = 'auto', ticker = raf }: SmoothStickOptions = {},
-): SmoothStick => {
+	{ distance = 0.4, ease = 'power2', media = POINTER, engine = 'auto', ticker = raf }: StickyOptions = {},
+): Sticky => {
 	const parent = el.parentElement
-	if (!parent) throw new Error('smoothStick: the element has no parent to stick within')
+	if (!parent) throw new Error('sticky: the element has no parent to stick within')
 
 	const gate = matchMedia(media)
 	const reduced = matchMedia('(prefers-reduced-motion: reduce)')
@@ -553,9 +553,9 @@ export const findSticky = (root: Document = document): HTMLElement[] => {
 	return [...found]
 }
 
-export type SmoothStickAll = {
+export type StickyAll = {
 	/** every element taken on, and its stick */
-	readonly sticks: ReadonlyMap<HTMLElement, SmoothStick>
+	readonly sticks: ReadonlyMap<HTMLElement, Sticky>
 	/** look again: a sticky that arrived since gets a stick, one that left the document loses its */
 	scan: () => void
 	/** measure every stick again */
@@ -565,18 +565,18 @@ export type SmoothStickAll = {
 	destroy: () => void
 }
 
-/* `data-smooth-stick="off"` leaves an element out; an ease's name there, and
-   `data-smooth-stick-distance`, are that one element's own */
-const own = (el: HTMLElement, options: SmoothStickOptions): SmoothStickOptions | null => {
-	const { smoothStick: ease, smoothStickDistance } = el.dataset
+/* `data-sticky-ease="off"` leaves an element out; an ease's name there, and
+   `data-sticky-distance`, are that one element's own */
+const own = (el: HTMLElement, options: StickyOptions): StickyOptions | null => {
+	const { stickyEase: ease, stickyDistance } = el.dataset
 	if (ease === 'off') return null
 
-	const distance = Number(smoothStickDistance)
+	const distance = Number(stickyDistance)
 
 	return {
 		...options,
 		...(ease && Object.hasOwn(eases, ease) ? { ease: ease as EaseName } : null),
-		...(smoothStickDistance && Number.isFinite(distance) ? { distance } : null),
+		...(stickyDistance && Number.isFinite(distance) ? { distance } : null),
 	}
 }
 
@@ -584,13 +584,13 @@ const own = (el: HTMLElement, options: SmoothStickOptions): SmoothStickOptions |
  * Every sticky on the page, or every match of a selector, each with a stick
  * of its own and one handle for the lot.
  */
-function all(options?: SmoothStickOptions): SmoothStickAll
-function all(selector: string, options?: SmoothStickOptions): SmoothStickAll
-function all(first?: string | SmoothStickOptions, second: SmoothStickOptions = {}): SmoothStickAll {
+function all(options?: StickyOptions): StickyAll
+function all(selector: string, options?: StickyOptions): StickyAll
+function all(first?: string | StickyOptions, second: StickyOptions = {}): StickyAll {
 	const selector = typeof first === 'string' ? first : null
 	const options = (typeof first === 'string' ? second : first) ?? {}
 
-	const sticks = new Map<HTMLElement, SmoothStick>()
+	const sticks = new Map<HTMLElement, Sticky>()
 	let frozen = false
 
 	const scan = () => {
@@ -632,7 +632,7 @@ function all(first?: string | SmoothStickOptions, second: SmoothStickOptions = {
 
 /**
  * Round off an element's sticky corners. It keeps its own position: sticky and
- * `top`; the correction goes on `translate`. `smoothStick.all()` does it for
+ * `top`; the correction goes on `translate`. `sticky.all()` does it for
  * every sticky on the page.
  */
-export const smoothStick = Object.assign(one, { all })
+export const sticky = Object.assign(one, { all })

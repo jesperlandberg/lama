@@ -1,4 +1,4 @@
-# @alpacka/smooth-stick
+# @alpacka/sticky
 
 `position: sticky` with its corners rounded off. The element slows into its
 line instead of stopping dead on it, and eases away when its container runs
@@ -12,14 +12,17 @@ the page moves. Wherever it does not run, the element is plain sticky.
 
 TypeScript, ES modules, no dependencies.
 
+Up to 0.1.0 this was `@alpacka/smooth-stick`. Same code, new name: `smoothStick`
+is `sticky`, and the types lost the prefix with it.
+
 ## Install
 
 ```sh
-npm i @alpacka/smooth-stick
+npm i @alpacka/sticky
 ```
 
 Every version is also attached as a tarball to its GitHub release, tagged
-`smooth-stick-vX.Y.Z` on [jesperlandberg/lama](https://github.com/jesperlandberg/lama/releases).
+`sticky-vX.Y.Z` on [jesperlandberg/lama](https://github.com/jesperlandberg/lama/releases).
 
 ## Use
 
@@ -33,9 +36,9 @@ within.
 ```
 
 ```ts
-import { smoothStick } from '@alpacka/smooth-stick'
+import { sticky } from '@alpacka/sticky'
 
-const stick = smoothStick(document.querySelector('.rail')!)
+const stick = sticky(document.querySelector('.rail')!)
 
 stick.freeze()  // hold the current pose, e.g. before a page transition resets the scroll
 stick.destroy() // back to plain sticky
@@ -61,8 +64,8 @@ sticky off turns this off with it.
 ## Every sticky at once
 
 ```ts
-const sticks = smoothStick.all()          // every sticky on the page
-const rails = smoothStick.all('.rail')    // or the ones you name
+const sticks = sticky.all()          // every sticky on the page
+const rails = sticky.all('.rail')    // or the ones you name
 
 sticks.scan()     // look again, after content arrived or left
 sticks.freeze()
@@ -85,8 +88,8 @@ sticky, a sticky inside its own scroll container.
 Both forms take the same options, and an attribute sets one element apart:
 
 ```html
-<aside data-smooth-stick="off">…</aside>   <!-- leave this one alone -->
-<aside data-smooth-stick="expo" data-smooth-stick-distance="0.3">…</aside>
+<aside data-sticky-ease="off">…</aside>   <!-- leave this one alone -->
+<aside data-sticky-ease="expo" data-sticky-distance="0.3">…</aside>
 ```
 
 `sticks.sticks` is a `Map` of each element to its own stick. `findSticky()` is
@@ -116,7 +119,7 @@ A virtual scroll has no sticky to correct. `curve` is the same maths on its
 own, and `clamp` is the rounded ramp to use in place of a clamp:
 
 ```ts
-import { curve } from '@alpacka/smooth-stick'
+import { curve } from '@alpacka/sticky'
 
 const c = curve({ travel: 1200, span: innerHeight * 0.4, ease: 'power2' })
 const offset = c.clamp(scroll - engage)

@@ -1,5 +1,5 @@
 {
-	"name": "@alpacka/smooth-stick",
+	"name": "@alpacka/sticky",
 	"version": "0.1.0",
 	"description": "position: sticky with its corners rounded off — the element slows into its line and eases away from it, as a scroll-driven animation beside sticky.",
 	"keywords": [
@@ -44,9 +44,9 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/jesperlandberg/lama.git",
-		"directory": "packages/smooth-stick"
+		"directory": "packages/sticky"
 	},
-	"homepage": "https://github.com/jesperlandberg/lama/tree/main/packages/smooth-stick#readme",
+	"homepage": "https://github.com/jesperlandberg/lama/tree/main/packages/sticky#readme",
 	"bugs": "https://github.com/jesperlandberg/lama/issues",
 	"publishConfig": {
 		"access": "public"
