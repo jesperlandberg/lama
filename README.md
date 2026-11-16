@@ -8,7 +8,7 @@ repo, each package versioned and released on its own, and published on npm under
 | --- | --- |
 | [`@alpacka/split`](packages/split) | splits blocks of text into the lines the browser painted — every block measured before any is cut, every original node put back on revert |
 | [`@alpacka/motion`](packages/motion) | retargetable, velocity-preserving spring motion — a spring is state, interactions only set targets; a DOM adapter, hover/press/drag bindings, and a FLIP registry whose flights re-read their destination every frame |
-| [`@alpacka/sticky`](packages/sticky) | `position: sticky` with its corners rounded off — the element slows into its line and eases away from it, as a scroll-driven animation beside sticky |
+| [`@alpacka/sticky`](packages/sticky) | `position: sticky` that eases in and out. The browser still pins the element; this adds one offset on top, as a scroll-driven animation |
 
 ## Install
 
