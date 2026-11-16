@@ -52,11 +52,45 @@ parent's own view timeline.
 | `ease` | `'power2'` | the landing curve: `'power1'`, `'power2'`, `'power3'`, `'expo'`, or any ease-out function (`gsap.parseEase('expo.out')`). The take-off plays it mirrored |
 | `media` | `'(hover: hover) and (pointer: fine)'` | where it runs. Everywhere else, including touch, it is plain sticky. `'all'` runs it everywhere |
 | `engine` | `'auto'` | `'compositor'` runs a scroll-driven animation, `'main'` writes the same curve from `ticker`, `'auto'` takes the compositor wherever there is one |
-| `ticker` | `requestAnimationFrame` | `(fn) => unsubscribe`, the loop the main-thread engine writes on. Hand in your smooth scroll's frame (Lenis) so the write lands in the frame the page moves in |
+| `ticker` | `requestAnimationFrame` | `(fn) => unsubscribe`, the loop the main-thread engine writes on. Hand in your smooth scroll's frame (Lenis) so the write lands in the frame the page moves in. Subscribed only while the parent is near the viewport, so it is called again each time the parent comes back |
 
 It also stays plain sticky under `prefers-reduced-motion`, and whenever the
 element's computed position is not `sticky`, so a breakpoint that turns the
 sticky off turns this off with it.
+
+## Every sticky at once
+
+```ts
+const sticks = smoothStick.all()          // every sticky on the page
+const rails = smoothStick.all('.rail')    // or the ones you name
+
+sticks.scan()     // look again, after content arrived or left
+sticks.freeze()
+sticks.destroy()
+```
+
+With no selector it finds the stickies itself. It reads the page's stylesheets
+for the rules that declare `position: sticky` and takes what their selectors
+match, plus anything made sticky inline. It goes by the rules, not by computed
+style, so a sticky that only exists from a breakpoint up is found at any width
+and switches itself on when it becomes one. A stylesheet from another origin,
+served without CORS, cannot be read; with one of those on the page it also
+takes every element that is sticky right now.
+
+Running it blind is safe because the correction is only ever an offset on top
+of sticky. What it cannot round stays plain sticky: a table header pinned
+inside its row, a site header with the whole page to stick within, a `bottom`
+sticky, a sticky inside its own scroll container.
+
+Both forms take the same options, and an attribute sets one element apart:
+
+```html
+<aside data-smooth-stick="off">…</aside>   <!-- leave this one alone -->
+<aside data-smooth-stick="expo" data-smooth-stick-distance="0.3">…</aside>
+```
+
+`sticks.sticks` is a `Map` of each element to its own stick. `findSticky()` is
+the search on its own.
 
 ## How it works
 
@@ -93,8 +127,9 @@ const offset = c.clamp(scroll - engage)
 The compositor path needs scroll-driven animations: Chrome and Edge 115+,
 Safari 26+. Firefox takes the main-thread path.
 
-Handled: `top` stickies on the block axis of the root scroller. Not yet:
-`bottom` and `left` stickies (the same maths, mirrored) and nested scroll
+Handled: `top` stickies on the block axis of the root scroller. Not yet, and
+left plain sticky until then: `bottom` and `left` stickies (the same maths,
+mirrored) and stickies inside nested scroll
 containers. While it runs, the element's `translate` belongs to it.
 
 ## License

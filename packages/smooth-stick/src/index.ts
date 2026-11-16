@@ -42,23 +42,43 @@
  * stop standing. The windows are offsets on the parent's timeline, so anything
  * that moves the parent (a font swapping in above it, a picture arriving)
  * moves them with it; only a resize of the element or its parent calls for a
- * new measure.
+ * new measure, and a measure that finds the numbers where they were leaves
+ * the animation running as it is.
  *
  * Without scroll-driven animations (Firefox today) the same curve is written
  * from a ticker: requestAnimationFrame, unless the caller hands in its own, so
  * a page driven by a smooth scroll (Lenis) can write it in the frame that
- * scroll moves in. A write from script lands a frame behind a threaded scroll,
+ * scroll moves in, and only while the parent is near the viewport, so a page
+ * of these does not read layout every frame for elements nobody can see. A
+ * write from script lands a frame behind a threaded scroll,
  * which is also why touch is left out by default: on a phone the compositor
  * owns the scroll.
+ *
+ * ── All of them ──
+ *
+ * `smoothStick.all()` finds the page's stickies itself. It reads the
+ * stylesheets for the rules that declare `position: sticky` and takes
+ * whatever their selectors match, rather than asking every element for its
+ * computed style: a sticky that only exists from a breakpoint up is not
+ * sticky on a narrow viewport, and would be missed for good. The rule is
+ * there at any width, and each element already turns itself on and off as its
+ * computed position changes.
+ *
+ * It is safe to run blind because of what the correction is. A sticky this
+ * cannot round (a table header pinned inside its row, a site header with the
+ * whole page to stick within, a `bottom` sticky) measures to nothing and stays
+ * plain sticky. `data-smooth-stick="off"` leaves an element out, and the same
+ * attribute names an ease for one element.
  *
  * ── Left alone ──
  *
  * `top` stickies on the block axis of the root scroller. A `bottom` or `left`
- * sticky is the same maths mirrored and is not built; a nested scroll
- * container would need its own origin for the landing's lead and for the
- * fallback's reads. The parent is taken to be the box the element sticks
- * within, and a grid item counts when its area is the grid's whole height.
- * While it runs, the element's `translate` belongs to this.
+ * sticky is the same maths mirrored and is not built. A sticky inside a
+ * nested scroll container pins against that box, where the landing's lead and
+ * the fallback's reads would need an origin of their own, so it is left plain
+ * sticky. The parent is taken to be the box the element sticks within, and a
+ * grid item counts when its area is the grid's whole height. While it runs,
+ * the element's `translate` belongs to this.
  */
 
 export type Ease = (t: number) => number
@@ -129,14 +149,19 @@ export const curve = ({ travel, span, ease = 'power2', lead = Infinity }: CurveO
 	let land = rounds ? Math.min(span / m, Math.max(0, lead)) : 0
 	let lift = rounds ? span / m : 0
 
-	const need = (m - 1) * (land + lift)
-	if (rounds && need > travel) {
+	/* how far past sticky's corner a window runs, per unit of ground covered.
+	   Nothing for an ease that rounds no corner, so one that is not a curve at
+	   all (a slope that comes back NaN) leaves empty windows and not NaN ones. */
+	const past = rounds ? m - 1 : 0
+
+	const need = past * (land + lift)
+	if (need > travel) {
 		land *= travel / need
 		lift *= travel / need
 	}
 
-	const into: [number, number] = [-land, (m - 1) * land]
-	const outof: [number, number] = [travel - (m - 1) * lift, travel + lift]
+	const into: [number, number] = [-land, past * land]
+	const outof: [number, number] = [travel - past * lift, travel + lift]
 
 	const bump = (t: number) => Math.min(m * t, 1) - E(t)
 
@@ -176,7 +201,8 @@ export type SmoothStickOptions = {
 	 *  the compositor wherever there is one — 'auto' */
 	engine?: 'auto' | 'compositor' | 'main'
 	/** the frame loop the main-thread engine writes on, returning its unsubscribe —
-	 *  requestAnimationFrame */
+	 *  requestAnimationFrame. Subscribed only while the parent is near the viewport, so it is
+	 *  called again each time the parent comes back */
 	ticker?: (fn: () => void) => () => void
 }
 
@@ -195,8 +221,30 @@ export type SmoothStick = {
    shows as a wobble and plain sticky does not */
 const POINTER = '(hover: hover) and (pointer: fine)'
 
-/* keyframes per window; the corners themselves are added exactly */
+/* keyframes per window; the corners and the windows' ends are added exactly */
 const SAMPLES = 48
+
+/*
+ * The correction as keyframes over [into[0], outof[1]], offsets 0 to 1. Six of
+ * them are exact. Sticky's two corners, because the correction's kink there
+ * is what cancels sticky's. And all four ends of the two windows, where it is
+ * zero: without the inner two, the last sample of the landing and the first
+ * of the take-off are joined straight across the hold, and the element spends
+ * all of it a fraction of a pixel off its line and drifting.
+ */
+export const keyframes = ({ into, outof, travel, at }: Curve) => {
+	const [a, b] = [into[0], outof[1]]
+	const xs = new Set([a, 0, into[1], outof[0], travel, b])
+
+	for (const [from, to] of [into, outof]) {
+		for (let i = 1; i < SAMPLES; i++) xs.add(from + ((to - from) * i) / SAMPLES)
+	}
+
+	return [...xs]
+		.filter((x) => x >= a && x <= b)
+		.sort((u, v) => u - v)
+		.map((x) => ({ offset: (x - a) / (b - a), translate: `0 ${at(x)}px` }))
+}
 
 const raf = (fn: () => void) => {
 	let id = requestAnimationFrame(function loop() {
@@ -208,10 +256,29 @@ const raf = (fn: () => void) => {
 }
 
 /*
+ * A scroll container between the element and the page. Sticky pins against
+ * the nearest one, and everything here is measured against the root's. Any
+ * overflow but `visible` and `clip` makes one; body's is the viewport's own
+ * unless the root has an overflow of its own to keep it.
+ */
+const scrolls = (from: Element) => {
+	const root = document.documentElement
+
+	for (let a: Element | null = from; a && a !== root; a = a.parentElement) {
+		if (a === document.body && getComputedStyle(root).overflowY === 'visible') continue
+
+		const overflow = getComputedStyle(a).overflowY
+		if (overflow !== 'visible' && overflow !== 'clip') return true
+	}
+
+	return false
+}
+
+/*
  * Round off an element's sticky corners. It keeps its own position: sticky and
  * `top`; the correction goes on `translate`.
  */
-export const smoothStick = (
+const one = (
 	el: HTMLElement,
 	{ distance = 0.4, ease = 'power2', media = POINTER, engine = 'auto', ticker = raf }: SmoothStickOptions = {},
 ): SmoothStick => {
@@ -229,24 +296,37 @@ export const smoothStick = (
 	let untick: (() => void) | null = null
 	let frozen = false
 
+	/* what the engine that is running was built from: the engage point and
+	   the curve's travel, span and lead */
+	let built: number[] | null = null
+
 	const stop = () => {
 		anim?.cancel()
 		anim = null
 		untick?.()
 		untick = null
+		built = null
 		el.style.translate = ''
 	}
 
+	/* The correction where it stands, which a rect read now would take for
+	   layout. Zero everywhere but inside the two windows. */
+	const offset = () =>
+		getComputedStyle(el)
+			.translate.split(' ')
+			.some((v) => parseFloat(v))
+
 	/*
-	 * Reads the box where the flow put it, with sticky out of the way: false
+	 * Reads the box where the flow put it, with sticky out of the way: null
 	 * when there is no sticky to round off (a breakpoint that turns it off, a
-	 * `top` left at auto). Positions are kept in scroll past the parent's top
-	 * meeting the viewport's, the parent timeline's own terms.
+	 * `top` left at auto, a scroll container of its own to pin against).
+	 * Positions are kept in scroll past the parent's top meeting the
+	 * viewport's, the parent timeline's own terms.
 	 */
 	const measure = () => {
 		const s = getComputedStyle(el)
 		const top = parseFloat(s.top)
-		if (s.position !== 'sticky' || !Number.isFinite(top)) return false
+		if (s.position !== 'sticky' || !Number.isFinite(top) || scrolls(parent)) return null
 
 		const position = el.style.position
 		el.style.position = 'static'
@@ -257,39 +337,47 @@ export const smoothStick = (
 		const ps = getComputedStyle(parent)
 		const floor = p.bottom - parseFloat(ps.borderBottomWidth) - parseFloat(ps.paddingBottom)
 
-		engage = r.top - p.top - top
-		c = curve({
-			travel: Math.max(0, floor - r.bottom - parseFloat(s.marginBottom)),
-			/* the small viewport: it holds still while a phone's toolbar comes and goes */
-			span: distance * document.documentElement.clientHeight,
-			ease,
-			lead: scrollY + r.top - top,
-		})
+		const engage = r.top - p.top - top
+		const travel = Math.max(0, floor - r.bottom - parseFloat(s.marginBottom))
+		/* the small viewport: it holds still while a phone's toolbar comes and goes */
+		const span = distance * document.documentElement.clientHeight
+		const lead = scrollY + r.top - top
 
-		return true
+		return { engage, span, curve: curve({ travel, span, ease, lead }), from: [engage, travel, span, lead] }
 	}
 
-	const keyframes = ({ into, outof, travel, at }: Curve) => {
-		const [a, b] = [into[0], outof[1]]
-		const xs = new Set([a, 0, travel, b])
-
-		for (const [from, to] of [into, outof]) {
-			for (let i = 1; i < SAMPLES; i++) xs.add(from + ((to - from) * i) / SAMPLES)
-		}
-
-		return [...xs]
-			.filter((x) => x >= a && x <= b)
-			.sort((u, v) => u - v)
-			.map((x) => ({ offset: (x - a) / (b - a), translate: `0 ${at(x)}px` }))
-	}
-
+	/*
+	 * Measures, and builds an engine only when the numbers moved. Most calls
+	 * find them where they were: the observer's first delivery straight after
+	 * the first measure, a window resize and the observer both reporting one
+	 * frame, a resize that changed neither box. Those cost the read and no
+	 * more, where each used to cancel the animation and make it again.
+	 */
 	const refresh = () => {
 		if (frozen) return
-		stop()
-		if (!gate.matches || reduced.matches || !measure() || !c) return
 
-		const { into, outof, at } = c
+		const running = !!(anim || untick)
+		const runs = gate.matches && !reduced.matches
+
+		/* the engine comes off before the read only where its offset is in the
+		   rect; with none running, this also clears a pose an earlier stick
+		   froze onto the element */
+		if (!runs || !running || offset()) stop()
+
+		const next = runs ? measure() : null
+
+		if (next && built && next.from.every((v, i) => Math.abs(v - (built?.[i] ?? NaN)) < 0.01)) return
+
+		stop()
+		c = next?.curve ?? null
+		if (!next) return
+
+		engage = next.engage
+
+		const { into, outof, at } = next.curve
 		if (into[1] - into[0] + (outof[1] - outof[0]) <= 0) return
+
+		built = next.from
 
 		if (timeline) {
 			const options: RangeOptions = {
@@ -299,19 +387,50 @@ export const smoothStick = (
 				fill: 'none',
 			}
 
-			anim = el.animate(keyframes(c), options)
+			anim = el.animate(keyframes(next.curve), options)
 			return
 		}
 
 		let last = 0
 
-		untick = ticker(() => {
+		const tick = () => {
 			const y = at(-parent.getBoundingClientRect().top - engage)
 			if (y === last) return
 
 			last = y
 			el.style.translate = y ? `0 ${y}px` : ''
-		})
+		}
+
+		/*
+		 * On the ticker only while the parent is near the viewport. Both windows
+		 * lie inside the stretch where it is, give or take a landing, and
+		 * outside it the element is off screen too; a page of these otherwise
+		 * reads layout once each, every frame, for as long as it is open. It
+		 * starts subscribed, and written once, so a rebuild in the middle of a
+		 * window does not leave the element at plain sticky for the frame or
+		 * two the observer takes to report.
+		 */
+		let off: (() => void) | null = ticker(tick)
+
+		const near = new IntersectionObserver(
+			(entries) => {
+				if (entries[entries.length - 1]?.isIntersecting) off ??= ticker(tick)
+				else {
+					off?.()
+					off = null
+				}
+			},
+			{ rootMargin: `${Math.ceil(next.span)}px 0px` },
+		)
+
+		near.observe(parent)
+		tick()
+
+		untick = () => {
+			near.disconnect()
+			off?.()
+			off = null
+		}
 	}
 
 	const freeze = () => {
@@ -366,3 +485,154 @@ export const smoothStick = (
 		},
 	}
 }
+
+/*
+ * The selectors of every rule that declares `position: sticky`, at any depth:
+ * inside a media query, a layer, a container query, an import. A rule nested
+ * in another gives its own selector without its parent's, which matches more
+ * than the rule does; the extra elements are not sticky, and one that is not
+ * sticky is left alone. `unread` counts the sheets that would not open: one
+ * from another origin, served without CORS, throws on `cssRules`.
+ */
+export const stickySelectors = (sheets: Iterable<{ readonly cssRules: Iterable<unknown> }>) => {
+	type Rule = {
+		selectorText?: string
+		style?: { position?: string }
+		cssRules?: Iterable<unknown>
+		styleSheet?: { readonly cssRules: Iterable<unknown> } | null
+	}
+
+	const selectors: string[] = []
+	let unread = 0
+
+	const walk = (rules: Iterable<unknown>) => {
+		for (const rule of rules as Iterable<Rule>) {
+			if (rule.selectorText && rule.style?.position === 'sticky') selectors.push(rule.selectorText)
+			if (rule.cssRules) walk(rule.cssRules)
+			if (rule.styleSheet) open(rule.styleSheet)
+		}
+	}
+
+	const open = (sheet: { readonly cssRules: Iterable<unknown> }) => {
+		try {
+			walk(sheet.cssRules)
+		} catch {
+			unread++
+		}
+	}
+
+	for (const sheet of sheets) open(sheet)
+
+	return { selectors, unread }
+}
+
+/**
+ * The elements a page's own CSS makes sticky, at this width or any other:
+ * what its stylesheets' sticky rules match, and anything made sticky inline.
+ */
+export const findSticky = (root: Document = document): HTMLElement[] => {
+	const { selectors, unread } = stickySelectors([...root.styleSheets, ...root.adoptedStyleSheets])
+	const found = new Set<HTMLElement>()
+
+	/* one at a time: a selector this cannot query (a pseudo-element) would
+	   otherwise take the rest of the list down with it */
+	for (const selector of [...selectors, '[style*="sticky"]']) {
+		try {
+			for (const el of root.querySelectorAll<HTMLElement>(selector)) found.add(el)
+		} catch {}
+	}
+
+	/* a sheet that would not open may hold sticky rules of its own: fall back
+	   to asking every element, which finds what is sticky right now */
+	if (unread) {
+		for (const el of root.querySelectorAll<HTMLElement>('*')) {
+			if (getComputedStyle(el).position === 'sticky') found.add(el)
+		}
+	}
+
+	return [...found]
+}
+
+export type SmoothStickAll = {
+	/** every element taken on, and its stick */
+	readonly sticks: ReadonlyMap<HTMLElement, SmoothStick>
+	/** look again: a sticky that arrived since gets a stick, one that left the document loses its */
+	scan: () => void
+	/** measure every stick again */
+	refresh: () => void
+	/** set every correction down where it stands */
+	freeze: () => void
+	destroy: () => void
+}
+
+/* `data-smooth-stick="off"` leaves an element out; an ease's name there, and
+   `data-smooth-stick-distance`, are that one element's own */
+const own = (el: HTMLElement, options: SmoothStickOptions): SmoothStickOptions | null => {
+	const { smoothStick: ease, smoothStickDistance } = el.dataset
+	if (ease === 'off') return null
+
+	const distance = Number(smoothStickDistance)
+
+	return {
+		...options,
+		...(ease && Object.hasOwn(eases, ease) ? { ease: ease as EaseName } : null),
+		...(smoothStickDistance && Number.isFinite(distance) ? { distance } : null),
+	}
+}
+
+/*
+ * Every sticky on the page, or every match of a selector, each with a stick
+ * of its own and one handle for the lot.
+ */
+function all(options?: SmoothStickOptions): SmoothStickAll
+function all(selector: string, options?: SmoothStickOptions): SmoothStickAll
+function all(first?: string | SmoothStickOptions, second: SmoothStickOptions = {}): SmoothStickAll {
+	const selector = typeof first === 'string' ? first : null
+	const options = (typeof first === 'string' ? second : first) ?? {}
+
+	const sticks = new Map<HTMLElement, SmoothStick>()
+	let frozen = false
+
+	const scan = () => {
+		if (frozen) return
+
+		for (const [el, stick] of sticks) {
+			if (el.isConnected) continue
+
+			stick.destroy()
+			sticks.delete(el)
+		}
+
+		const found = selector ? document.querySelectorAll<HTMLElement>(selector) : findSticky()
+
+		for (const el of found) {
+			if (sticks.has(el) || !el.parentElement) continue
+
+			const mine = own(el, options)
+			if (mine) sticks.set(el, one(el, mine))
+		}
+	}
+
+	scan()
+
+	return {
+		sticks,
+		scan,
+		refresh: () => sticks.forEach((stick) => stick.refresh()),
+		freeze() {
+			frozen = true
+			sticks.forEach((stick) => stick.freeze())
+		},
+		destroy() {
+			sticks.forEach((stick) => stick.destroy())
+			sticks.clear()
+		},
+	}
+}
+
+/**
+ * Round off an element's sticky corners. It keeps its own position: sticky and
+ * `top`; the correction goes on `translate`. `smoothStick.all()` does it for
+ * every sticky on the page.
+ */
+export const smoothStick = Object.assign(one, { all })

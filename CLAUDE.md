@@ -108,8 +108,32 @@ were `@lama/…` until 2026-09-28, see below. An umbrella (`lama.create.split()`
 - `freeze()` commits the pose inline and drops the animation, for a page whose
   scroll is reset under it while it is still on screen (a transition); a
   `destroy()` after it keeps that pose.
+- `smoothStick.all()` finds stickies from the stylesheets' RULES (any rule that
+  declares `position: sticky`, at any depth), never from computed style: a
+  sticky behind a breakpoint is not sticky at the other width, and a computed
+  scan would miss it for good. An element taken on that is not sticky is an
+  idle stick that wakes by itself. Computed style is only the fallback for a
+  page with a sheet that cannot be read. It is opt-out
+  (`data-smooth-stick="off"`), which is only sound because `measure` refuses
+  what it cannot round: no `top`, zero travel, and a scroll container between
+  the element and the root (`scrolls`). Keep that guard as wide as the search.
+- Six keyframes are exact: sticky's two corners and all four ends of the two
+  windows. Without the inner two ends the hold is a straight line between the
+  last sample of the landing and the first of the take-off, a fraction of a
+  pixel off zero and drifting (0.075px on power1, measured). `keyframes` is
+  pure and tested for it.
+- `refresh` measures and rebuilds only when the engage point, travel, span or
+  lead moved. The engine comes off before the read only when its offset is in
+  the rect (the element inside a window), since that offset would be measured
+  as layout. One build at init, one per frame of a real resize, none for a
+  resize that changed nothing.
+- The main-thread engine is on the ticker only while the parent is near the
+  viewport (an IntersectionObserver, a span of margin). It starts subscribed
+  and written once, so a rebuild inside a window shows no frame of plain
+  sticky. A caller's `ticker` is therefore subscribed more than once.
 - Verified by `npm test -w @alpacka/smooth-stick` (the curve: windows, edge
-  slopes, continuity, monotonic, mirror, shrink, lead, eases) and on goldfront
+  slopes, continuity, monotonic, mirror, shrink, lead, eases; the keyframes;
+  the selector walk) and on goldfront
   (the Text1 client rail, the ideas post credits; vendored there first, on the
   npm package since 0.1.0), scrolled in steps: sticky goes from scroll
   speed to still in one step, the corrected element 0.95 → 0.49 at sticky's
