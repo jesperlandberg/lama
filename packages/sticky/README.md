@@ -66,6 +66,18 @@ The element is also plain sticky under `prefers-reduced-motion`, and whenever
 its computed position is not `sticky`. A breakpoint that turns sticky off turns
 this off too.
 
+## Touch
+
+Off by default. On a phone the offset can run out of step with the scroll,
+depending on the browser, so touch devices get plain sticky. To run it
+everywhere anyway:
+
+```ts
+sticky.all({ media: 'all' })
+```
+
+Try that on a real phone before you ship it.
+
 ## Every sticky at once
 
 ```ts

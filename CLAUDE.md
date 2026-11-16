@@ -134,7 +134,20 @@ until it was renamed on 2026-11-16). split and motion were `@lama/…` until
   lead moved. The engine comes off before the read only when its offset is in
   the rect (the element inside a window), since that offset would be measured
   as layout. One build at init, one per frame of a real resize, none for a
-  resize that changed nothing.
+  resize that changed nothing, and none for a resize that finds the element
+  inside a window with nothing changed.
+- Touch stays off by default (`media` is the pointer query), and that was
+  tested, not assumed. 2026-11-16, Jesper's phone, the demo with `media: 'all'`:
+  the card jumped and ran out of step with the finger. One cause was ours: a
+  toolbar sliding away is a `resize`, and `refresh` took the engine off to
+  measure whenever the element was inside a window, so the animation was
+  dropped and rebuilt under the finger. `measure` now leaves it running and
+  takes its offset out of the rect (5 rebuilds for 5 resizes -> 0). With that
+  fixed it still wobbled. The engine and the browser were not noted; WebKit's
+  tracker has scroll-driven animations on the main thread before iOS 26.4 and
+  updated at 60Hz on iOS after. Do not flip the default without a phone in
+  hand: the demo's `?touch` forces it on and reads out the engine, the
+  animation builds and the resizes.
 - The main-thread engine is on the ticker only while the parent is near the
   viewport (an IntersectionObserver, a span of margin). It starts subscribed
   and written once, so a rebuild inside a window shows no frame of plain

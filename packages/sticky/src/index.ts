@@ -50,9 +50,13 @@
  * a page driven by a smooth scroll (Lenis) can write it in the frame that
  * scroll moves in, and only while the parent is near the viewport, so a page
  * of these does not read layout every frame for elements nobody can see. A
- * write from script lands a frame behind a threaded scroll,
- * which is also why touch is left out by default: on a phone the compositor
- * owns the scroll.
+ * write from script lands a frame behind a threaded scroll.
+ *
+ * Touch is left out by default, and not only for that engine. On a phone the
+ * scroll belongs to the compositor and waits for nothing, and the
+ * scroll-driven animation was seen out of step with it too, on a real device
+ * with the animation built once and left alone. That is the browser's to
+ * mend. `media: 'all'` runs it there anyway.
  *
  * ── All of them ──
  *
@@ -217,8 +221,8 @@ export type Sticky = {
 	destroy: () => void
 }
 
-/* touch scrolls on the compositor, where a correction written a frame late
-   shows as a wobble and plain sticky does not */
+/* touch scrolls on the compositor, where a correction a frame late shows as a
+   wobble and plain sticky does not; seen with both engines on a phone */
 const POINTER = '(hover: hover) and (pointer: fine)'
 
 /* keyframes per window; the corners and the windows' ends are added exactly */
@@ -311,10 +315,7 @@ const one = (
 
 	/* The correction where it stands, which a rect read now would take for
 	   layout. Zero everywhere but inside the two windows. */
-	const offset = () =>
-		getComputedStyle(el)
-			.translate.split(' ')
-			.some((v) => parseFloat(v))
+	const offset = () => parseFloat(getComputedStyle(el).translate.split(' ')[1] ?? '') || 0
 
 	/*
 	 * Reads the box where the flow put it, with sticky out of the way: null
@@ -323,7 +324,7 @@ const one = (
 	 * Positions are kept in scroll past the parent's top meeting the
 	 * viewport's, the parent timeline's own terms.
 	 */
-	const measure = () => {
+	const measure = (shift: number) => {
 		const s = getComputedStyle(el)
 		const top = parseFloat(s.top)
 		if (s.position !== 'sticky' || !Number.isFinite(top) || scrolls(parent)) return null
@@ -337,11 +338,15 @@ const one = (
 		const ps = getComputedStyle(parent)
 		const floor = p.bottom - parseFloat(ps.borderBottomWidth) - parseFloat(ps.paddingBottom)
 
-		const engage = r.top - p.top - top
-		const travel = Math.max(0, floor - r.bottom - parseFloat(s.marginBottom))
+		/* the rect has the correction in it where the engine is running; the
+		   flow position is the rect with that taken back out */
+		const flow = { top: r.top - shift, bottom: r.bottom - shift }
+
+		const engage = flow.top - p.top - top
+		const travel = Math.max(0, floor - flow.bottom - parseFloat(s.marginBottom))
 		/* the small viewport: it holds still while a phone's toolbar comes and goes */
 		const span = distance * document.documentElement.clientHeight
-		const lead = scrollY + r.top - top
+		const lead = scrollY + flow.top - top
 
 		return { engage, span, curve: curve({ travel, span, ease, lead }), from: [engage, travel, span, lead] }
 	}
@@ -359,12 +364,17 @@ const one = (
 		const running = !!(anim || untick)
 		const runs = gate.matches && !reduced.matches
 
-		/* the engine comes off before the read only where its offset is in the
-		   rect; with none running, this also clears a pose an earlier stick
-		   froze onto the element */
-		if (!runs || !running || offset()) stop()
+		/* with no engine running, this clears a pose an earlier stick froze
+		   onto the element */
+		if (!runs || !running) stop()
 
-		const next = runs ? measure() : null
+		/* A running engine is left on for the read, and its offset is taken
+		   out of the numbers. Taking the engine off instead meant a rebuild
+		   for every call that found the element inside a window, and a phone
+		   makes those calls in the middle of a scroll: its toolbar sliding
+		   away is a resize. The animation dropped and rebuilt under the
+		   finger showed as a jump. */
+		const next = runs ? measure(running ? offset() : 0) : null
 
 		if (next && built && next.from.every((v, i) => Math.abs(v - (built?.[i] ?? NaN)) < 0.01)) return
 
